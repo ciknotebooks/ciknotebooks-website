@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>CikNotebooks | Every Notebook Can Teach Something</title>
+
+  <meta name="description" content="CikNotebooks combines school subjects, real-world knowledge and future skills in everyday notebooks. Learn, Think, Solve, Create, Grow.">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #172033;
+      background: #ffffff;
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .container {
+      width: min(1180px, 92%);
+      margin: auto;
+    }
+
+    /* HEADER */
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #e8ebf2;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 800;
+      color: #102a56;
+    }
+
+    .logo span {
+      color: #f5b400;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      list-style: none;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: #f0a900;
+    }
+
+    .nav-btn {
+      background: #102a56;
+      color: white !important;
+      padding: 11px 17px;
+      border-radius: 8px;
+    }
+
+    /* HERO */
+
+    .hero {
+      background:
+        radial-gradient(circle at 85% 20%, rgba(245,180,0,.18), transparent 28%),
+        linear-gradient(135deg, #f7faff 0%, #eef4ff 100%);
+      padding: 100px 0 90px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .eyebrow {
+      color: #e29a00;
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(42px, 6vw, 72px);
+      line-height: 1.04;
+      color: #102a56;
+      margin-bottom: 24px;
+    }
+
+    .hero p {
+      font-size: 20px;
+      max-width: 680px;
+      color: #4d5870;
+      margin-bottom: 30px;
+    }
+
+    .tagline {
+      font-weight: 800;
+      color: #102a56;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 22px;
+      border-radius: 9px;
+      font-weight: 700;
+      border: 1px solid #102a56;
+    }
+
+    .btn-primary {
+      background: #102a56;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #102a56;
+    }
+
+    .hero-visual {
+      min-height: 450px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .notebook {
+      width: 290px;
+      height: 390px;
+      border-radius: 12px;
+      background: linear-gradient(145deg,#122f61,#1e4b91);
+      box-shadow: 0 30px 60px rgba(16,42,86,.25);
+      transform: rotate(5deg);
+      padding: 35px 25px;
+      color: white;
+      position: relative;
+    }
+
+    .notebook:before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 8px;
+    }
+
+    .notebook h3 {
+      position: relative;
+      font-size: 30px;
+      margin-top: 65px;
+    }
+
+    .notebook p {
+      position: relative;
+      color: #fff;
+      font-size: 14px;
+      margin-top: 14px;
+    }
+
+    .floating-card {
+      position: absolute;
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 15px 35px rgba(0,0,0,.12);
+      font-weight: 700;
+      color: #102a56;
+    }
+
+    .fc1 {
+      top: 45px;
+      right: 0;
+    }
+
+    .fc2 {
+      bottom: 45px;
+      left: 0;
+    }
+
+    /* GENERAL */
+
+    section {
+      padding: 90px 0;
+    }
+
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 50px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.1;
+      color: #102a56;
+      margin-bottom: 16px;
+    }
+
+    .section-head p {
+      color: #626c80;
+      font-size: 17px;
+    }
+
+    /* WHY */
+
+    .why {
+      background: #fff;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 22px;
+    }
+
+    .card {
+      border: 1px solid #e5e9f0;
+      border-radius: 14px;
+      padding: 28px;
+      background: white;
+      transition: .25s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(16,42,86,.09);
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #fff3cf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 23px;
+      margin-bottom: 18px;
+    }
+
+    .card h3 {
+      color: #102a56;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .card p {
+      color: #687287;
+      font-size: 15px;
+    }
+
+    /* PHILOSOPHY */
+
+    .philosophy {
+      background: #f6f8fc;
+    }
+
+    .framework {
+      display: grid;
+      grid-template-columns: repeat(6,1fr);
+      gap: 14px;
+    }
+
+    .framework-card {
+      padding: 24px 12px;
+      text-align: center;
+      border-radius: 12px;
+      background: white;
+      border: 1px solid #e4e8ef;
+    }
+
+    .framework-card strong {
+      display: block;
+      color: #102a56;
+      margin-bottom: 7px;
+    }
+
+    .framework-card small {
+      color: #687287;
+    }
+
+    /* SEGMENTS */
+
+    .segments {
+      background: #102a56;
+      color: white;
+    }
+
+    .segments .section-head h2,
+    .segments .section-head p {
+      color: white;
+    }
+
+    .segment-grid {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 18px;
+    }
+
+    .segment {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 14px;
+      padding: 26px;
+    }
+
+    .segment-number {
+      font-size: 14px;
+      color: #ffd25b;
+      font-weight: 800;
+    }
+
+    .segment h3 {
+      margin: 12px 0 8px;
+      font-size: 23px;
+    }
+
+    .segment p {
+      color: #d8e0ee;
+      font-size: 14px;
+    }
+
+    /* TOPICS */
+
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 16px;
+    }
+
+    .topic {
+      border: 1px solid #e5e9f0;
+      border-radius: 12px;
+      padding: 20px;
+      background: #fff;
+    }
+
+    .topic strong {
+      color: #102a56;
+    }
+
+    .topic span {
+      display: block;
+      color: #707a8c;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+
+    /* SCHOOL */
+
+    .school {
+      background: #f6f8fc;
+    }
+
+    .school-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+    }
+
+    .school-list {
+      list-style: none;
+      margin-top: 25px;
+    }
+
+    .school-list li {
+      margin: 13px 0;
+      padding-left: 27px;
+      position: relative;
+    }
+
+    .school-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #e5a500;
+      font-weight: bold;
+    }
+
+    .school-panel {
+      background: white;
+      padding: 35px;
+      border-radius: 16px;
+      border: 1px solid #e4e8ef;
+      box-shadow: 0 20px 40px rgba(16,42,86,.08);
+    }
+
+    /* IMPACT */
+
+    .impact {
+      background: #fffaf0;
+    }
+
+    .impact-grid {
+      display: grid;
+      grid-template-columns: repeat(5,1fr);
+      gap: 15px;
+    }
+
+    .impact-item {
+      padding: 22px;
+      background: white;
+      border: 1px solid #eee4cc;
+      border-radius: 12px;
+    }
+
+    .impact-item strong {
+      display: block;
+      color: #102a56;
+      margin-bottom: 9px;
+    }
+
+    .impact-item p {
+      font-size: 14px;
+      color: #687287;
+    }
+
+    /* CONTACT */
+
+    .contact {
+      background: #102a56;
+      color: white;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 55px;
+    }
+
+    .contact h2 {
+      font-size: 45px;
+      margin-bottom: 18px;
+    }
+
+    .contact p {
+      color: #dbe3f0;
+    }
+
+    form {
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 13px;
+      margin-bottom: 13px;
+      border: 1px solid #d9dee8;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      padding: 14px;
+      border-radius: 8px;
+      background: #f0ae00;
+      color: #102a56;
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    /* FOOTER */
+
+    footer {
+      background: #091b38;
+      color: white;
+      padding: 45px 0 25px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 35px;
+    }
+
+    footer h3 {
+      margin-bottom: 14px;
+    }
+
+    footer p,
+    footer li {
+      color: #bfc9da;
+      font-size: 14px;
+    }
+
+    footer ul {
+      list-style: none;
+    }
+
+    footer li {
+      margin: 8px 0;
+    }
+
+    .copyright {
+      border-top: 1px solid rgba(255,255,255,.12);
+      padding-top: 20px;
+      text-align: center;
+      color: #aeb9cc;
+      font-size: 13px;
+    }
+
+    /* WHATSAPP */
+
+    .whatsapp {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 999;
+      background: #25d366;
+      color: white;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      box-shadow: 0 8px 25px rgba(0,0,0,.2);
+    }
+
+    /* MOBILE */
+
+    @media(max-width:900px) {
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero-grid,
+      .school-grid,
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .segment-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .topic-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .framework {
+        grid-template-columns: repeat(3,1fr);
+      }
+
+      .impact-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media(max-width:600px) {
+
+      section {
+        padding: 65px 0;
+      }
+
+      .hero {
+        padding: 70px 0;
+      }
+
+      h1 {
+        font-size: 43px;
+      }
+
+      .hero p {
+        font-size: 17px;
+      }
+
+      .hero-visual {
+        min-height: 390px;
+      }
+
+      .notebook {
+        width: 245px;
+        height: 330px;
+      }
+
+      .cards,
+      .segment-grid,
+      .topic-grid,
+      .framework,
+      .impact-grid,
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .contact h2 {
+        font-size: 35px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+
+    <a href="#" class="logo">
+      Cik<span>Notebooks</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#segments">Segments</a></li>
+      <li><a href="#topics">Topics</a></li>
+      <li><a href="#schools">For Schools</a></li>
+      <li><a href="#impact">Social Impact</a></li>
+      <li><a href="#contact" class="nav-btn">Request Demo</a></li>
+    </ul>
+
+  </div>
+</header>
+
+
+<!-- HERO -->
+
+<section class="hero">
+  <div class="container hero-grid">
+
+    <div>
+
+      <div class="eyebrow">
+        Content-Infused Knowledge Notebooks
+      </div>
+
+      <h1>
+        Every Notebook Can Teach Something.
+      </h1>
+
+      <p>
+        CikNotebooks combines school subjects, real-world knowledge
+        and future skills inside everyday notebooks — creating
+        awareness, curiosity and a habit of thinking beyond textbooks.
+      </p>
+
+      <div class="tagline">
+        Learn • Think • Solve • Create • Grow
+      </div>
+
+      <div class="buttons">
+        <a href="#contact" class="btn btn-primary">
+          Request a School Demo
+        </a>
+
+        <a href="#segments" class="btn btn-secondary">
+          Explore CikNotebooks
+        </a>
+      </div>
+
+    </div>
+
+    <div class="hero-visual">
+
+      <div class="notebook">
+        <div style="position:relative;font-size:13px;font-weight:bold;">
+          CikNotebooks
+        </div>
+
+        <h3>
+          Learn Beyond<br>
+          The Page.
+        </h3>
+
+        <p>
+          School Subject + Real-World Knowledge + Future Skills
+        </p>
+
+        <p style="margin-top:35px;font-weight:bold;">
+          Learn Think Solve Create Grow
+        </p>
+      </div>
+
+      <div class="floating-card fc1">
+        💡 Think
+      </div>
+
+      <div class="floating-card fc2">
+        🚀 Create
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ABOUT -->
+
+<section id="about">
+  <div class="container">
+
+    <div class="section-head">
+      <div class="eyebrow">Why CikNotebooks?</div>
+
+      <h2>
+        Turning everyday notebook pages into learning opportunities.
+      </h2>
+
+      <p>
+        Traditional notebooks are mostly blank pages used for writing.
+        CikNotebooks adds another layer — curated knowledge, questions,
+        examples, activities and future-oriented ideas.
+      </p>
+    </div>
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="icon">💡</div>
+        <h3>Content-Infused Knowledge</h3>
+        <p>
+          Students encounter useful knowledge while using the notebook
+          they already carry to school every day.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">🔎</div>
+        <h3>Awareness & Curiosity</h3>
+        <p>
+          CikNotebooks encourages students to notice, question,
+          explore and understand the world around them.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">🚀</div>
+        <h3>Future-Ready Learning</h3>
+        <p>
+          AI, technology, entrepreneurship, financial literacy,
+          innovation, life skills and more are introduced progressively.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- PHILOSOPHY -->
+
+<section class="philosophy">
+  <div class="container">
+
+    <div class="section-head">
+      <div class="eyebrow">Learning Philosophy</div>
+
+      <h2>
+        Knowledge should lead to thinking and action.
+      </h2>
+
+      <p>
+        CikNotebooks is designed around curiosity, critical thinking,
+        hands-on exploration, problem solving, creativity and real-world
+        application.
+      </p>
+    </div>
+
+    <div class="framework">
+
+      <div class="framework-card">
+        <strong>KNOW</strong>
+        <small>World & future knowledge</small>
+      </div>
+
+      <div class="framework-card">
+        <strong>THINK</strong>
+        <small>Questions & decisions</small>
+      </div>
+
+      <div class="framework-card">
+        <strong>SOLVE</strong>
+        <small>Real-world problems</small>
+      </div>
+
+      <div class="framework-card">
+        <strong>CREATE</strong>
+        <small>Projects & challenges</small>
+      </div>
+
+      <div class="framework-card">
+        <strong>EXPLORE</strong>
+        <small>Careers & opportunities</small>
+      </div>
+
+      <div class="framework-card">
+        <strong>REFLECT</strong>
+        <small>Personal growth</small>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- SEGMENTS -->
+
+<section id="segments" class="segments">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Age-Wise Learning
+      </div>
+
+      <h2>
+        Four segments. One progressive learning journey.
+      </h2>
+
+      <p>
+        Content complexity increases with age, while unnecessary repetition
+        is avoided.
+      </p>
+
+    </div>
+
+    <div class="segment-grid">
+
+      <div class="segment">
+        <div class="segment-number">SEGMENT 01</div>
+        <h3>Classes 1–3</h3>
+        <p>
+          Ages 6–8. Curiosity, observation, imagination,
+          simple real-world awareness and healthy habits.
+        </p>
+      </div>
+
+      <div class="segment">
+        <div class="segment-number">SEGMENT 02</div>
+        <h3>Classes 4–6</h3>
+        <p>
+          Ages 9–11. Awareness, simple logic, digital literacy,
+          money basics, communication and exploration.
+        </p>
+      </div>
+
+      <div class="segment">
+        <div class="segment-number">SEGMENT 03</div>
+        <h3>Classes 7–9</h3>
+        <p>
+          Ages 12–14. Analysis, decision-making, AI, finance,
+          entrepreneurship, cybersecurity and real-world problems.
+        </p>
+      </div>
+
+      <div class="segment">
+        <div class="segment-number">SEGMENT 04</div>
+        <h3>Classes 10–12</h3>
+        <p>
+          Ages 15–17. Strategy, advanced technology, careers,
+          personal finance, startups and future opportunities.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- TOPICS -->
+
+<section id="topics">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Master Topic Architecture
+      </div>
+
+      <h2>
+        Learning beyond the conventional syllabus.
+      </h2>
+
+      <p>
+        CikNotebooks progressively explores knowledge areas that help
+        students understand themselves, society, technology and the future.
+      </p>
+
+    </div>
+
+    <div class="topic-grid">
+
+      <div class="topic">
+        <strong>01. Mindset & Personal Growth</strong>
+        <span>Curiosity → Growth mindset → Resilience → Self-mastery</span>
+      </div>
+
+      <div class="topic">
+        <strong>02. Critical Thinking & Problem Solving</strong>
+        <span>Observe → Logic → Analysis → Strategic thinking</span>
+      </div>
+
+      <div class="topic">
+        <strong>03. Creativity & Innovation</strong>
+        <span>Imagine → Ideas → Design thinking → Product creation</span>
+      </div>
+
+      <div class="topic">
+        <strong>04. Artificial Intelligence</strong>
+        <span>AI awareness → ML & GenAI → Applications & future</span>
+      </div>
+
+      <div class="topic">
+        <strong>05. Technology & Digital World</strong>
+        <span>Technology → Internet → Cybersecurity → Emerging tech</span>
+      </div>
+
+      <div class="topic">
+        <strong>06. Financial Literacy</strong>
+        <span>Money → Saving → Investing → Financial planning</span>
+      </div>
+
+      <div class="topic">
+        <strong>07. Entrepreneurship</strong>
+        <span>Ideas → Problems → Business model → Startups</span>
+      </div>
+
+      <div class="topic">
+        <strong>08. Marketing & Sales</strong>
+        <span>Communication → Customers → Branding → Strategy</span>
+      </div>
+
+      <div class="topic">
+        <strong>09. Career & Future of Work</strong>
+        <span>Jobs → Discovery → Skills → Employability</span>
+      </div>
+
+      <div class="topic">
+        <strong>10. Communication & Soft Skills</strong>
+        <span>Speaking → Storytelling → Collaboration → Leadership</span>
+      </div>
+
+      <div class="topic">
+        <strong>11. Health & Human Well-being</strong>
+        <span>Healthy habits → Physiology → Well-being → Performance</span>
+      </div>
+
+      <div class="topic">
+        <strong>12. Environment & Sustainability</strong>
+        <span>Nature → Conservation → Climate → Green economy</span>
+      </div>
+
+      <div class="topic">
+        <strong>13. Agriculture & Food System</strong>
+        <span>Plants → Farming → Precision agriculture → Agri-tech</span>
+      </div>
+
+      <div class="topic">
+        <strong>14. Science & Emerging Technology</strong>
+        <span>Science → Applications → Emerging technology → Deep tech</span>
+      </div>
+
+      <div class="topic">
+        <strong>15. India & Society</strong>
+        <span>My India → Opportunities → Economy → India 2047</span>
+      </div>
+
+      <div class="topic">
+        <strong>16. World & Global Awareness</strong>
+        <span>World → Cultures → Global economy → Global opportunities</span>
+      </div>
+
+      <div class="topic">
+        <strong>17. Business, Economy & Industries</strong>
+        <span>Shops → Business → Markets → Economic systems</span>
+      </div>
+
+      <div class="topic">
+        <strong>18. Digital & Personal Safety</strong>
+        <span>Safe habits → Online safety → Cyber risk → Data privacy</span>
+      </div>
+
+      <div class="topic">
+        <strong>19. Society, Ethics & Citizenship</strong>
+        <span>Kindness → Rules → Ethics → Responsible decisions</span>
+      </div>
+
+      <div class="topic">
+        <strong>20. Real-world Challenges & Projects</strong>
+        <span>Observe → Explore → Prototype → Execute</span>
+      </div>
+
+      <div class="topic">
+        <strong>21. Emotional Intelligence</strong>
+        <span>Emotions → Empathy → Relationships → Leadership</span>
+      </div>
+
+      <div class="topic">
+        <strong>22. Banking & Digital Payments</strong>
+        <span>Bank basics → UPI → Banking → Financial systems</span>
+      </div>
+
+      <div class="topic">
+        <strong>23. Investing & Wealth</strong>
+        <span>Saving → Investing → Risk → Wealth building</span>
+      </div>
+
+      <div class="topic">
+        <strong>24. Energy & Renewable Energy</strong>
+        <span>Energy → Renewables → Storage → Energy transition</span>
+      </div>
+
+      <div class="topic">
+        <strong>25. Startup Stories</strong>
+        <span>Companies, founders, ideas and startup journeys</span>
+      </div>
+
+      <div class="topic">
+        <strong>26. Famous Personalities & Their Work</strong>
+        <span>Ideas, journeys, achievements and lessons</span>
+      </div>
+
+      <div class="topic">
+        <strong>27. Government, Defence & National Service</strong>
+        <span>Government schemes → Public service → National service</span>
+      </div>
+
+      <div class="topic">
+        <strong>28. Current Affairs</strong>
+        <span>Age-appropriate awareness of important recent events</span>
+      </div>
+
+      <div class="topic">
+        <strong>29. New-generation Technology</strong>
+        <span>Advanced agriculture → Robotics → Space → EVs</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- FOR SCHOOLS -->
+
+<section id="schools" class="school">
+
+  <div class="container school-grid">
+
+    <div>
+
+      <div class="eyebrow">
+        For Schools
+      </div>
+
+      <h2 style="font-size:45px;color:#102a56;margin-bottom:18px;">
+        A notebook program designed for your school.
+      </h2>
+
+      <p style="color:#667085;">
+        CikNotebooks can be customised according to the requirements,
+        preferences and learning priorities of individual schools.
+      </p>
+
+      <ul class="school-list">
+
+        <li>School name, logo and school-specific cover</li>
+
+        <li>School vision or objectives can be included</li>
+
+        <li>Content topics can be customised</li>
+
+        <li>Age-wise learning segments</li>
+
+        <li>Progressive future-ready content</li>
+
+        <li>School-specific pricing discussions</li>
+
+      </ul>
+
+    </div>
+
+    <div class="school-panel">
+
+      <h3 style="font-size:28px;color:#102a56;margin-bottom:15px;">
+        School Partnership
+      </h3>
+
+      <p style="color:#687287;margin-bottom:20px;">
+        From school-specific notebook covers to customised learning
+        content, CikNotebooks is designed to work with schools,
+        not simply sell notebooks to them.
+      </p>
+
+      <a href="#contact" class="btn btn-primary">
+        Discuss Your School
+      </a>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- FRESH CONTENT -->
+
+<section>
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Fresh Learning
+      </div>
+
+      <h2>
+        Learning content can evolve with every new notebook cycle.
+      </h2>
+
+      <p>
+        CikNotebooks is designed around fresh and progressively updated
+        content so students can continue discovering new ideas rather than
+        repeatedly seeing the same material.
+      </p>
+
+    </div>
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="icon">🔄</div>
+        <h3>Fresh Content</h3>
+        <p>
+          New content themes can be introduced across notebook cycles,
+          subject to school requirements and production planning.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">📚</div>
+        <h3>Progressive Learning</h3>
+        <p>
+          Concepts become more sophisticated as students move from one
+          age segment to the next.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="icon">🌍</div>
+        <h3>Real-world Connection</h3>
+        <p>
+          Students are encouraged to connect classroom learning with
+          real situations, technologies and opportunities.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- SOCIAL IMPACT -->
+
+<section id="impact" class="impact">
+
+  <div class="container">
+
+    <div class="section-head">
+
+      <div class="eyebrow">
+        Our Social Impact Commitment
+      </div>
+
+      <h2>
+        A notebook that goes beyond writing.
+      </h2>
+
+      <p>
+        We believe every child deserves more than a place to write.
+        They deserve a place to discover, question, imagine and build
+        their future.
+      </p>
+
+    </div>
+
+    <div class="impact-grid">
+
+      <div class="impact-item">
+        <strong>01. Education for All</strong>
+        <p>
+          Supporting education of economically disadvantaged students
+          through essential educational support.
+        </p>
+      </div>
+
+      <div class="impact-item">
+        <strong>02. Supporting Underprivileged Students</strong>
+        <p>
+          Helping provide notebooks, stationery and other educational
+          resources to students in need.
+        </p>
+      </div>
+
+      <div class="impact-item">
+        <strong>03. Student Merit Reward</strong>
+        <p>
+          Supporting student achievement through merit-oriented initiatives
+          subject to program requirements.
+        </p>
+      </div>
+
+      <div class="impact-item">
+        <strong>04. Future-Ready Learning</strong>
+        <p>
+          Encouraging exploration of AI, technology, innovation,
+          entrepreneurship, financial literacy and life skills.
+        </p>
+      </div>
+
+      <div class="impact-item">
+        <strong>05. Empowering Young Minds</strong>
+        <p>
+          Helping students develop confidence to think independently,
+          solve problems and create ideas.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- CONTACT -->
+
+<section id="contact" class="contact">
+
+  <div class="container contact-grid">
+
+    <div>
+
+      <div class="eyebrow">
+        Partner With CikNotebooks
+      </div>
+
+      <h2>
+        Bring future-ready learning into your school.
+      </h2>
+
+      <p>
+        If you are a school principal, academic coordinator,
+        management representative or educator, let's explore
+        how CikNotebooks can work for your students.
+      </p>
+
+      <br>
+
+      <p>
+        <strong>School Demo</strong><br>
+        Request a conversation with CikNotebooks.
+      </p>
+
+    </div>
+
+
+    <form onsubmit="submitForm(event)">
+
+      <input type="text" placeholder="School Name *" required>
+
+      <input type="text" placeholder="Contact Person *" required>
+
+      <input type="text" placeholder="Designation">
+
+      <input type="tel" placeholder="Phone Number *" required>
+
+      <input type="email" placeholder="Email">
+
+      <input type="text" placeholder="City *" required>
+
+      <select>
+        <option>Classes / Segment Interested In</option>
+        <option>Segment 1 — Classes 1–3</option>
+        <option>Segment 2 — Classes 4–6</option>
+        <option>Segment 3 — Classes 7–9</option>
+        <option>Segment 4 — Classes 10–12</option>
+        <option>Multiple Segments</option>
+      </select>
+
+      <textarea placeholder="Tell us about your school / requirements"></textarea>
+
+      <button type="submit">
+        Request School Demo
+      </button>
+
+    </form>
+
+  </div>
+</section>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+  <div class="container footer-grid">
+
+    <div>
+
+      <h3>CikNotebooks</h3>
+
+      <p>
+        Content-Infused Knowledge Notebooks.
+      </p>
+
+      <p style="margin-top:10px;">
+        Every Notebook Can Teach Something.
+      </p>
+
+      <p style="margin-top:10px;">
+        Learn • Think • Solve • Create • Grow
+      </p>
+
+    </div>
+
+    <div>
+
+      <h3>Explore</h3>
+
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#segments">Segments</a></li>
+        <li><a href="#topics">Topics</a></li>
+        <li><a href="#schools">For Schools</a></li>
+      </ul>
+
+    </div>
+
+    <div>
+
+      <h3>Connect</h3>
+
+      <ul>
+        <li><a href="#contact">Request Demo</a></li>
+        <li>WhatsApp</li>
+        <li>Email</li>
+        <li>Jharkhand, India</li>
+      </ul>
+
+    </div>
+
+  </div>
+
+  <div class="container copyright">
+    © 2026 CikNotebooks. All Rights Reserved.
+  </div>
+
+</footer>
+
+
+<!-- WHATSAPP -->
+
+<a
+  class="whatsapp"
+  href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school."
+  target="_blank"
+  aria-label="Chat on WhatsApp">
+  ☎
+</a>
+
+
+<script>
+
+function submitForm(event) {
+  event.preventDefault();
+
+  alert(
+    "Thank you for contacting CikNotebooks! " +
+    "The enquiry form will be connected to the official email system before launch."
+  );
+}
+
+</script>
+
+</body>
+</html>
