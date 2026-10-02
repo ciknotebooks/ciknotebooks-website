@@ -1,661 +1,675 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>CikNotebooks | Every Notebook Can Teach Something</title>
-
-  <meta name="description" content="CikNotebooks combines school subjects, real-world knowledge and future skills in everyday notebooks. Learn, Think, Solve, Create, Grow.">
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      color: #172033;
-      background: #ffffff;
-      line-height: 1.6;
-    }
-
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-
-    img {
-      max-width: 100%;
-      display: block;
-    }
-
-    .container {
-      width: min(1180px, 92%);
-      margin: auto;
-    }
-
-    /* HEADER */
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: rgba(255,255,255,0.96);
-      border-bottom: 1px solid #e8ebf2;
-      backdrop-filter: blur(10px);
-    }
-
-    .nav {
-      min-height: 76px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 25px;
-    }
-
-    .logo {
-      font-size: 26px;
-      font-weight: 800;
-      color: #102a56;
-    }
-
-    .logo span {
-      color: #f5b400;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 24px;
-      align-items: center;
-      list-style: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .nav-links a:hover {
-      color: #f0a900;
-    }
-
-    .nav-btn {
-      background: #102a56;
-      color: white !important;
-      padding: 11px 17px;
-      border-radius: 8px;
-    }
-
-    /* HERO */
-
-    .hero {
-      background:
-        radial-gradient(circle at 85% 20%, rgba(245,180,0,.18), transparent 28%),
-        linear-gradient(135deg, #f7faff 0%, #eef4ff 100%);
-      padding: 100px 0 90px;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      align-items: center;
-      gap: 60px;
-    }
-
-    .eyebrow {
-      color: #e29a00;
-      font-size: 14px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 18px;
-    }
-
-    h1 {
-      font-size: clamp(42px, 6vw, 72px);
-      line-height: 1.04;
-      color: #102a56;
-      margin-bottom: 24px;
-    }
-
-    .hero p {
-      font-size: 20px;
-      max-width: 680px;
-      color: #4d5870;
-      margin-bottom: 30px;
-    }
-
-    .tagline {
-      font-weight: 800;
-      color: #102a56;
-      font-size: 18px;
-      margin-bottom: 30px;
-    }
-
-    .buttons {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 14px 22px;
-      border-radius: 9px;
-      font-weight: 700;
-      border: 1px solid #102a56;
-    }
-
-    .btn-primary {
-      background: #102a56;
-      color: white;
-    }
-
-    .btn-secondary {
-      background: white;
-      color: #102a56;
-    }
-
-    .hero-visual {
-      min-height: 450px;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .notebook {
-      width: 290px;
-      height: 390px;
-      border-radius: 12px;
-      background: linear-gradient(145deg,#122f61,#1e4b91);
-      box-shadow: 0 30px 60px rgba(16,42,86,.25);
-      transform: rotate(5deg);
-      padding: 35px 25px;
-      color: white;
-      position: relative;
-    }
-
-    .notebook:before {
-      content: "";
-      position: absolute;
-      inset: 12px;
-      border: 1px solid rgba(255,255,255,.25);
-      border-radius: 8px;
-    }
-
-    .notebook h3 {
-      position: relative;
-      font-size: 30px;
-      margin-top: 65px;
-    }
-
-    .notebook p {
-      position: relative;
-      color: #fff;
-      font-size: 14px;
-      margin-top: 14px;
-    }
-
-    .floating-card {
-      position: absolute;
-      background: white;
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 15px 35px rgba(0,0,0,.12);
-      font-weight: 700;
-      color: #102a56;
-    }
-
-    .fc1 {
-      top: 45px;
-      right: 0;
-    }
-
-    .fc2 {
-      bottom: 45px;
-      left: 0;
-    }
-
-    /* GENERAL */
-
-    section {
-      padding: 90px 0;
-    }
-
-    .section-head {
-      max-width: 760px;
-      margin-bottom: 50px;
-    }
-
-    .section-head h2 {
-      font-size: clamp(32px, 4vw, 48px);
-      line-height: 1.1;
-      color: #102a56;
-      margin-bottom: 16px;
-    }
-
-    .section-head p {
-      color: #626c80;
-      font-size: 17px;
-    }
-
-    /* WHY */
-
-    .why {
-      background: #fff;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 22px;
-    }
-
-    .card {
-      border: 1px solid #e5e9f0;
-      border-radius: 14px;
-      padding: 28px;
-      background: white;
-      transition: .25s;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(16,42,86,.09);
-    }
-
-    .icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      background: #fff3cf;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 23px;
-      margin-bottom: 18px;
-    }
-
-    .card h3 {
-      color: #102a56;
-      margin-bottom: 10px;
-      font-size: 20px;
-    }
-
-    .card p {
-      color: #687287;
-      font-size: 15px;
-    }
-
-    /* PHILOSOPHY */
-
-    .philosophy {
-      background: #f6f8fc;
-    }
-
-    .framework {
-      display: grid;
-      grid-template-columns: repeat(6,1fr);
-      gap: 14px;
-    }
-
-    .framework-card {
-      padding: 24px 12px;
-      text-align: center;
-      border-radius: 12px;
-      background: white;
-      border: 1px solid #e4e8ef;
-    }
-
-    .framework-card strong {
-      display: block;
-      color: #102a56;
-      margin-bottom: 7px;
-    }
-
-    .framework-card small {
-      color: #687287;
-    }
-
-    /* SEGMENTS */
-
-    .segments {
-      background: #102a56;
-      color: white;
-    }
-
-    .segments .section-head h2,
-    .segments .section-head p {
-      color: white;
-    }
-
-    .segment-grid {
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 18px;
-    }
-
-    .segment {
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 14px;
-      padding: 26px;
-    }
-
-    .segment-number {
-      font-size: 14px;
-      color: #ffd25b;
-      font-weight: 800;
-    }
-
-    .segment h3 {
-      margin: 12px 0 8px;
-      font-size: 23px;
-    }
-
-    .segment p {
-      color: #d8e0ee;
-      font-size: 14px;
-    }
-
-    /* TOPICS */
-
-    .topic-grid {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 16px;
-    }
-
-    .topic {
-      border: 1px solid #e5e9f0;
-      border-radius: 12px;
-      padding: 20px;
-      background: #fff;
-    }
-
-    .topic strong {
-      color: #102a56;
-    }
-
-    .topic span {
-      display: block;
-      color: #707a8c;
-      margin-top: 6px;
-      font-size: 14px;
-    }
-
-    /* SCHOOL */
-
-    .school {
-      background: #f6f8fc;
-    }
-
-    .school-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 50px;
-      align-items: center;
-    }
-
-    .school-list {
-      list-style: none;
-      margin-top: 25px;
-    }
-
-    .school-list li {
-      margin: 13px 0;
-      padding-left: 27px;
-      position: relative;
-    }
-
-    .school-list li:before {
-      content: "✓";
-      position: absolute;
-      left: 0;
-      color: #e5a500;
-      font-weight: bold;
-    }
-
-    .school-panel {
-      background: white;
-      padding: 35px;
-      border-radius: 16px;
-      border: 1px solid #e4e8ef;
-      box-shadow: 0 20px 40px rgba(16,42,86,.08);
-    }
-
-    /* IMPACT */
-
-    .impact {
-      background: #fffaf0;
-    }
-
-    .impact-grid {
-      display: grid;
-      grid-template-columns: repeat(5,1fr);
-      gap: 15px;
-    }
-
-    .impact-item {
-      padding: 22px;
-      background: white;
-      border: 1px solid #eee4cc;
-      border-radius: 12px;
-    }
-
-    .impact-item strong {
-      display: block;
-      color: #102a56;
-      margin-bottom: 9px;
-    }
-
-    .impact-item p {
-      font-size: 14px;
-      color: #687287;
-    }
-
-    /* CONTACT */
-
-    .contact {
-      background: #102a56;
-      color: white;
-    }
-
-    .contact-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 55px;
-    }
-
-    .contact h2 {
-      font-size: 45px;
-      margin-bottom: 18px;
-    }
-
-    .contact p {
-      color: #dbe3f0;
-    }
-
-    form {
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: 13px;
-      margin-bottom: 13px;
-      border: 1px solid #d9dee8;
-      border-radius: 7px;
-      font-family: inherit;
-      font-size: 14px;
-    }
-
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-    }
-
-    button {
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      padding: 14px;
-      border-radius: 8px;
-      background: #f0ae00;
-      color: #102a56;
-      font-weight: 800;
-      font-size: 15px;
-    }
-
-    /* FOOTER */
-
-    footer {
-      background: #091b38;
-      color: white;
-      padding: 45px 0 25px;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 35px;
-    }
-
-    footer h3 {
-      margin-bottom: 14px;
-    }
-
-    footer p,
-    footer li {
-      color: #bfc9da;
-      font-size: 14px;
-    }
-
-    footer ul {
-      list-style: none;
-    }
-
-    footer li {
-      margin: 8px 0;
-    }
-
-    .copyright {
-      border-top: 1px solid rgba(255,255,255,.12);
-      padding-top: 20px;
-      text-align: center;
-      color: #aeb9cc;
-      font-size: 13px;
-    }
-
-    /* WHATSAPP */
-
-    .whatsapp {
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      z-index: 999;
-      background: #25d366;
-      color: white;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 25px;
-      box-shadow: 0 8px 25px rgba(0,0,0,.2);
-    }
-
-    /* MOBILE */
-
-    @media(max-width:900px) {
-
-      .nav-links {
-        display: none;
-      }
-
-      .hero-grid,
-      .school-grid,
-      .contact-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .cards {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .segment-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .topic-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .framework {
-        grid-template-columns: repeat(3,1fr);
-      }
-
-      .impact-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media(max-width:600px) {
-
-      section {
-        padding: 65px 0;
-      }
-
-      .hero {
-        padding: 70px 0;
-      }
-
-      h1 {
-        font-size: 43px;
-      }
-
-      .hero p {
-        font-size: 17px;
-      }
-
-      .hero-visual {
-        min-height: 390px;
-      }
-
-      .notebook {
-        width: 245px;
-        height: 330px;
-      }
-
-      .cards,
-      .segment-grid,
-      .topic-grid,
-      .framework,
-      .impact-grid,
-      .footer-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .contact h2 {
-        font-size: 35px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CikNotebooks | Every Notebook Can Teach Something</title>
+
+<meta name="description" content="CikNotebooks combines school subjects, real-world knowledge and future skills in everyday notebooks. Learn, Think, Solve, Create, Grow.">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #172033;
+  background: #ffffff;
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+.container {
+  width: min(1180px, 92%);
+  margin: auto;
+}
+
+/* HEADER */
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255,255,255,0.96);
+  border-bottom: 1px solid #e8ebf2;
+  backdrop-filter: blur(10px);
+}
+
+.nav {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+}
+
+.logo {
+  font-size: 26px;
+  font-weight: 800;
+  color: #102a56;
+}
+
+.logo span {
+  color: #f5b400;
+}
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-links a:hover {
+  color: #f0a900;
+}
+
+.nav-btn {
+  background: #102a56;
+  color: white !important;
+  padding: 11px 17px;
+  border-radius: 8px;
+}
+
+/* HERO */
+
+.hero {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(245,180,0,.18), transparent 28%),
+    linear-gradient(135deg, #f7faff 0%, #eef4ff 100%);
+  padding: 100px 0 90px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  align-items: center;
+  gap: 60px;
+}
+
+.eyebrow {
+  color: #e29a00;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 18px;
+}
+
+h1 {
+  font-size: clamp(42px, 6vw, 72px);
+  line-height: 1.04;
+  color: #102a56;
+  margin-bottom: 24px;
+}
+
+.hero p {
+  font-size: 20px;
+  max-width: 680px;
+  color: #4d5870;
+  margin-bottom: 30px;
+}
+
+.tagline {
+  font-weight: 800;
+  color: #102a56;
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 14px 22px;
+  border-radius: 9px;
+  font-weight: 700;
+  border: 1px solid #102a56;
+}
+
+.btn-primary {
+  background: #102a56;
+  color: white;
+}
+
+.btn-secondary {
+  background: white;
+  color: #102a56;
+}
+
+.hero-visual {
+  min-height: 450px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notebook {
+  width: 290px;
+  height: 390px;
+  border-radius: 12px;
+  background: linear-gradient(145deg,#122f61,#1e4b91);
+  box-shadow: 0 30px 60px rgba(16,42,86,.25);
+  transform: rotate(5deg);
+  padding: 35px 25px;
+  color: white;
+  position: relative;
+}
+
+.notebook:before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 8px;
+}
+
+.notebook h3 {
+  position: relative;
+  font-size: 30px;
+  margin-top: 65px;
+}
+
+.notebook p {
+  position: relative;
+  color: #fff;
+  font-size: 14px;
+  margin-top: 14px;
+}
+
+.floating-card {
+  position: absolute;
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px rgba(0,0,0,.12);
+  font-weight: 700;
+  color: #102a56;
+}
+
+.fc1 {
+  top: 45px;
+  right: 0;
+}
+
+.fc2 {
+  bottom: 45px;
+  left: 0;
+}
+
+/* GENERAL */
+
+section {
+  padding: 90px 0;
+}
+
+.section-head {
+  max-width: 760px;
+  margin-bottom: 50px;
+}
+
+.section-head h2 {
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.1;
+  color: #102a56;
+  margin-bottom: 16px;
+}
+
+.section-head p {
+  color: #626c80;
+  font-size: 17px;
+}
+
+/* CARDS */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 22px;
+}
+
+.card {
+  border: 1px solid #e5e9f0;
+  border-radius: 14px;
+  padding: 28px;
+  background: white;
+  transition: .25s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(16,42,86,.09);
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #fff3cf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  margin-bottom: 18px;
+}
+
+.card h3 {
+  color: #102a56;
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.card p {
+  color: #687287;
+  font-size: 15px;
+}
+
+/* PHILOSOPHY */
+
+.philosophy {
+  background: #f6f8fc;
+}
+
+.framework {
+  display: grid;
+  grid-template-columns: repeat(6,1fr);
+  gap: 14px;
+}
+
+.framework-card {
+  padding: 24px 12px;
+  text-align: center;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e4e8ef;
+}
+
+.framework-card strong {
+  display: block;
+  color: #102a56;
+  margin-bottom: 7px;
+}
+
+.framework-card small {
+  color: #687287;
+}
+
+/* SEGMENTS */
+
+.segments {
+  background: #102a56;
+  color: white;
+}
+
+.segments .section-head h2,
+.segments .section-head p {
+  color: white;
+}
+
+.segment-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 18px;
+}
+
+.segment {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 14px;
+  padding: 26px;
+}
+
+.segment-number {
+  font-size: 14px;
+  color: #ffd25b;
+  font-weight: 800;
+}
+
+.segment h3 {
+  margin: 12px 0 8px;
+  font-size: 23px;
+}
+
+.segment p {
+  color: #d8e0ee;
+  font-size: 14px;
+}
+
+/* TOPICS */
+
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 16px;
+}
+
+.topic {
+  border: 1px solid #e5e9f0;
+  border-radius: 12px;
+  padding: 20px;
+  background: #fff;
+}
+
+.topic strong {
+  color: #102a56;
+}
+
+.topic span {
+  display: block;
+  color: #707a8c;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+/* SCHOOL */
+
+.school {
+  background: #f6f8fc;
+}
+
+.school-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.school-list {
+  list-style: none;
+  margin-top: 25px;
+}
+
+.school-list li {
+  margin: 13px 0;
+  padding-left: 27px;
+  position: relative;
+}
+
+.school-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #e5a500;
+  font-weight: bold;
+}
+
+.school-panel {
+  background: white;
+  padding: 35px;
+  border-radius: 16px;
+  border: 1px solid #e4e8ef;
+  box-shadow: 0 20px 40px rgba(16,42,86,.08);
+}
+
+/* IMPACT */
+
+.impact {
+  background: #fffaf0;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 15px;
+}
+
+.impact-item {
+  padding: 22px;
+  background: white;
+  border: 1px solid #eee4cc;
+  border-radius: 12px;
+}
+
+.impact-item strong {
+  display: block;
+  color: #102a56;
+  margin-bottom: 9px;
+}
+
+.impact-item p {
+  font-size: 14px;
+  color: #687287;
+}
+
+/* CONTACT */
+
+.contact {
+  background: #102a56;
+  color: white;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 55px;
+}
+
+.contact h2 {
+  font-size: 45px;
+  margin-bottom: 18px;
+}
+
+.contact p {
+  color: #dbe3f0;
+}
+
+.contact-details {
+  margin-top: 28px;
+  display: grid;
+  gap: 14px;
+}
+
+.contact-details a {
+  color: white;
+}
+
+.contact-details a:hover {
+  color: #ffd25b;
+}
+
+form {
+  background: white;
+  padding: 30px;
+  border-radius: 14px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 13px;
+  margin-bottom: 13px;
+  border: 1px solid #d9dee8;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f0ae00;
+  color: #102a56;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+/* FOOTER */
+
+footer {
+  background: #091b38;
+  color: white;
+  padding: 45px 0 25px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 35px;
+}
+
+footer h3 {
+  margin-bottom: 14px;
+}
+
+footer p,
+footer li {
+  color: #bfc9da;
+  font-size: 14px;
+}
+
+footer ul {
+  list-style: none;
+}
+
+footer li {
+  margin: 8px 0;
+}
+
+footer a:hover {
+  color: #ffd25b;
+}
+
+.copyright {
+  border-top: 1px solid rgba(255,255,255,.12);
+  padding-top: 20px;
+  text-align: center;
+  color: #aeb9cc;
+  font-size: 13px;
+}
+
+/* WHATSAPP */
+
+.whatsapp {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 999;
+  background: #25d366;
+  color: white;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  box-shadow: 0 8px 25px rgba(0,0,0,.2);
+}
+
+/* MOBILE */
+
+@media(max-width:900px) {
+
+  .nav-links {
+    display: none;
+  }
+
+  .hero-grid,
+  .school-grid,
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .segment-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .topic-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .framework {
+    grid-template-columns: repeat(3,1fr);
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media(max-width:600px) {
+
+  section {
+    padding: 65px 0;
+  }
+
+  .hero {
+    padding: 70px 0;
+  }
+
+  h1 {
+    font-size: 43px;
+  }
+
+  .hero p {
+    font-size: 17px;
+  }
+
+  .hero-visual {
+    min-height: 390px;
+  }
+
+  .notebook {
+    width: 245px;
+    height: 330px;
+  }
+
+  .cards,
+  .segment-grid,
+  .topic-grid,
+  .framework,
+  .impact-grid,
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact h2 {
+    font-size: 35px;
+  }
+}
+</style>
 </head>
 
 <body>
@@ -678,7 +692,6 @@
 
   </div>
 </header>
-
 
 <!-- HERO -->
 
@@ -706,13 +719,18 @@
       </div>
 
       <div class="buttons">
+
         <a href="#contact" class="btn btn-primary">
           Request a School Demo
         </a>
 
-        <a href="#segments" class="btn btn-secondary">
-          Explore CikNotebooks
+        <a
+          href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school."
+          target="_blank"
+          class="btn btn-secondary">
+          Talk on WhatsApp
         </a>
+
       </div>
 
     </div>
@@ -720,6 +738,7 @@
     <div class="hero-visual">
 
       <div class="notebook">
+
         <div style="position:relative;font-size:13px;font-weight:bold;">
           CikNotebooks
         </div>
@@ -736,6 +755,7 @@
         <p style="margin-top:35px;font-weight:bold;">
           Learn Think Solve Create Grow
         </p>
+
       </div>
 
       <div class="floating-card fc1">
@@ -751,14 +771,16 @@
   </div>
 </section>
 
-
 <!-- ABOUT -->
 
 <section id="about">
   <div class="container">
 
     <div class="section-head">
-      <div class="eyebrow">Why CikNotebooks?</div>
+
+      <div class="eyebrow">
+        Why CikNotebooks?
+      </div>
 
       <h2>
         Turning everyday notebook pages into learning opportunities.
@@ -769,49 +791,88 @@
         CikNotebooks adds another layer — curated knowledge, questions,
         examples, activities and future-oriented ideas.
       </p>
+
     </div>
 
     <div class="cards">
 
       <div class="card">
         <div class="icon">💡</div>
-        <h3>Content-Infused Knowledge</h3>
+
+        <h3>
+          Content-Infused Knowledge
+        </h3>
+
         <p>
           Students encounter useful knowledge while using the notebook
           they already carry to school every day.
         </p>
+
       </div>
 
       <div class="card">
+
         <div class="icon">🔎</div>
-        <h3>Awareness & Curiosity</h3>
+
+        <h3>
+          Awareness & Curiosity
+        </h3>
+
         <p>
           CikNotebooks encourages students to notice, question,
           explore and understand the world around them.
         </p>
+
       </div>
 
       <div class="card">
+
         <div class="icon">🚀</div>
-        <h3>Future-Ready Learning</h3>
+
+        <h3>
+          Future-Ready Learning
+        </h3>
+
         <p>
           AI, technology, entrepreneurship, financial literacy,
           innovation, life skills and more are introduced progressively.
         </p>
+
       </div>
 
     </div>
+
+    <div class="card" style="margin-top:22px;max-width:540px;">
+
+      <div class="icon">
+        👤
+      </div>
+
+      <h3>
+        Founded by Abhishek Kumar
+      </h3>
+
+      <p>
+        CikNotebooks is being built as an education innovation initiative
+        where an everyday notebook becomes an additional learning interface.
+      </p>
+
+    </div>
+
   </div>
 </section>
-
 
 <!-- PHILOSOPHY -->
 
 <section class="philosophy">
+
   <div class="container">
 
     <div class="section-head">
-      <div class="eyebrow">Learning Philosophy</div>
+
+      <div class="eyebrow">
+        Learning Philosophy
+      </div>
 
       <h2>
         Knowledge should lead to thinking and action.
@@ -822,6 +883,7 @@
         hands-on exploration, problem solving, creativity and real-world
         application.
       </p>
+
     </div>
 
     <div class="framework">
@@ -857,9 +919,10 @@
       </div>
 
     </div>
-  </div>
-</section>
 
+  </div>
+
+</section>
 
 <!-- SEGMENTS -->
 
@@ -887,45 +950,78 @@
     <div class="segment-grid">
 
       <div class="segment">
-        <div class="segment-number">SEGMENT 01</div>
-        <h3>Classes 1–3</h3>
+
+        <div class="segment-number">
+          SEGMENT 01
+        </div>
+
+        <h3>
+          Classes 1–3
+        </h3>
+
         <p>
           Ages 6–8. Curiosity, observation, imagination,
           simple real-world awareness and healthy habits.
         </p>
+
       </div>
 
       <div class="segment">
-        <div class="segment-number">SEGMENT 02</div>
-        <h3>Classes 4–6</h3>
+
+        <div class="segment-number">
+          SEGMENT 02
+        </div>
+
+        <h3>
+          Classes 4–6
+        </h3>
+
         <p>
           Ages 9–11. Awareness, simple logic, digital literacy,
           money basics, communication and exploration.
         </p>
+
       </div>
 
       <div class="segment">
-        <div class="segment-number">SEGMENT 03</div>
-        <h3>Classes 7–9</h3>
+
+        <div class="segment-number">
+          SEGMENT 03
+        </div>
+
+        <h3>
+          Classes 7–9
+        </h3>
+
         <p>
           Ages 12–14. Analysis, decision-making, AI, finance,
           entrepreneurship, cybersecurity and real-world problems.
         </p>
+
       </div>
 
       <div class="segment">
-        <div class="segment-number">SEGMENT 04</div>
-        <h3>Classes 10–12</h3>
+
+        <div class="segment-number">
+          SEGMENT 04
+        </div>
+
+        <h3>
+          Classes 10–12
+        </h3>
+
         <p>
           Ages 15–17. Strategy, advanced technology, careers,
           personal finance, startups and future opportunities.
         </p>
+
       </div>
 
     </div>
-  </div>
-</section>
 
+  </div>
+
+</section>
 
 <!-- TOPICS -->
 
@@ -1098,9 +1194,10 @@
       </div>
 
     </div>
-  </div>
-</section>
 
+  </div>
+
+</section>
 
 <!-- FOR SCHOOLS -->
 
@@ -1160,8 +1257,8 @@
     </div>
 
   </div>
-</section>
 
+</section>
 
 <!-- FRESH CONTENT -->
 
@@ -1190,36 +1287,55 @@
     <div class="cards">
 
       <div class="card">
+
         <div class="icon">🔄</div>
-        <h3>Fresh Content</h3>
+
+        <h3>
+          Fresh Content
+        </h3>
+
         <p>
           New content themes can be introduced across notebook cycles,
           subject to school requirements and production planning.
         </p>
+
       </div>
 
       <div class="card">
+
         <div class="icon">📚</div>
-        <h3>Progressive Learning</h3>
+
+        <h3>
+          Progressive Learning
+        </h3>
+
         <p>
           Concepts become more sophisticated as students move from one
           age segment to the next.
         </p>
+
       </div>
 
       <div class="card">
+
         <div class="icon">🌍</div>
-        <h3>Real-world Connection</h3>
+
+        <h3>
+          Real-world Connection
+        </h3>
+
         <p>
           Students are encouraged to connect classroom learning with
           real situations, technologies and opportunities.
         </p>
+
       </div>
 
     </div>
-  </div>
-</section>
 
+  </div>
+
+</section>
 
 <!-- SOCIAL IMPACT -->
 
@@ -1290,8 +1406,8 @@
     </div>
 
   </div>
-</section>
 
+</section>
 
 <!-- CONTACT -->
 
@@ -1315,40 +1431,141 @@
         how CikNotebooks can work for your students.
       </p>
 
-      <br>
+      <div class="contact-details">
 
-      <p>
-        <strong>School Demo</strong><br>
-        Request a conversation with CikNotebooks.
-      </p>
+        <p>
+          <strong>Founder</strong><br>
+          Abhishek Kumar
+        </p>
+
+        <p>
+          <strong>WhatsApp</strong><br>
+          <a
+            href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school."
+            target="_blank">
+            +91 92340 11955
+          </a>
+        </p>
+
+        <p>
+          <strong>Email</strong><br>
+          <a href="mailto:abhifund@gmail.com">
+            abhifund@gmail.com
+          </a>
+        </p>
+
+        <p>
+          <strong>Location</strong><br>
+          Jharkhand, India
+        </p>
+
+      </div>
 
     </div>
 
+    <!-- WORKING ENQUIRY FORM -->
 
-    <form onsubmit="submitForm(event)">
+    <form
+      action="https://formsubmit.co/abhifund@gmail.com"
+      method="POST">
 
-      <input type="text" placeholder="School Name *" required>
+      <input
+        type="hidden"
+        name="_subject"
+        value="New CikNotebooks School Enquiry">
 
-      <input type="text" placeholder="Contact Person *" required>
+      <input
+        type="hidden"
+        name="_template"
+        value="table">
 
-      <input type="text" placeholder="Designation">
+      <input
+        type="hidden"
+        name="_captcha"
+        value="true">
 
-      <input type="tel" placeholder="Phone Number *" required>
+      <input
+        type="hidden"
+        name="_autoresponse"
+        value="Thank you for contacting CikNotebooks. We have received your enquiry and will get back to you soon.">
 
-      <input type="email" placeholder="Email">
+      <input
+        type="hidden"
+        name="_honey"
+        style="display:none">
 
-      <input type="text" placeholder="City *" required>
+      <input
+        type="text"
+        name="school_name"
+        placeholder="School Name *"
+        required>
 
-      <select>
-        <option>Classes / Segment Interested In</option>
-        <option>Segment 1 — Classes 1–3</option>
-        <option>Segment 2 — Classes 4–6</option>
-        <option>Segment 3 — Classes 7–9</option>
-        <option>Segment 4 — Classes 10–12</option>
-        <option>Multiple Segments</option>
+      <input
+        type="text"
+        name="contact_person"
+        placeholder="Contact Person *"
+        required>
+
+      <input
+        type="text"
+        name="designation"
+        placeholder="Designation">
+
+      <input
+        type="tel"
+        name="phone"
+        placeholder="Phone Number *"
+        required>
+
+      <input
+        type="email"
+        name="email"
+        placeholder="Email *"
+        required>
+
+      <input
+        type="text"
+        name="city"
+        placeholder="City *"
+        required>
+
+      <input
+        type="number"
+        name="number_of_students"
+        placeholder="Approx. Number of Students"
+        min="1">
+
+      <select name="segment">
+
+        <option value="">
+          Classes / Segment Interested In
+        </option>
+
+        <option>
+          Segment 1 — Classes 1–3
+        </option>
+
+        <option>
+          Segment 2 — Classes 4–6
+        </option>
+
+        <option>
+          Segment 3 — Classes 7–9
+        </option>
+
+        <option>
+          Segment 4 — Classes 10–12
+        </option>
+
+        <option>
+          Multiple Segments
+        </option>
+
       </select>
 
-      <textarea placeholder="Tell us about your school / requirements"></textarea>
+      <textarea
+        name="message"
+        placeholder="Tell us about your school / requirements"></textarea>
 
       <button type="submit">
         Request School Demo
@@ -1357,8 +1574,8 @@
     </form>
 
   </div>
-</section>
 
+</section>
 
 <!-- FOOTER -->
 
@@ -1368,7 +1585,9 @@
 
     <div>
 
-      <h3>CikNotebooks</h3>
+      <h3>
+        CikNotebooks
+      </h3>
 
       <p>
         Content-Infused Knowledge Notebooks.
@@ -1382,30 +1601,76 @@
         Learn • Think • Solve • Create • Grow
       </p>
 
+      <p style="margin-top:10px;">
+        Founded by Abhishek Kumar
+      </p>
+
     </div>
 
     <div>
 
-      <h3>Explore</h3>
+      <h3>
+        Explore
+      </h3>
 
       <ul>
-        <li><a href="#about">About</a></li>
-        <li><a href="#segments">Segments</a></li>
-        <li><a href="#topics">Topics</a></li>
-        <li><a href="#schools">For Schools</a></li>
+
+        <li>
+          <a href="#about">About</a>
+        </li>
+
+        <li>
+          <a href="#segments">Segments</a>
+        </li>
+
+        <li>
+          <a href="#topics">Topics</a>
+        </li>
+
+        <li>
+          <a href="#schools">For Schools</a>
+        </li>
+
+        <li>
+          <a href="#impact">Social Impact</a>
+        </li>
+
       </ul>
 
     </div>
 
     <div>
 
-      <h3>Connect</h3>
+      <h3>
+        Connect
+      </h3>
 
       <ul>
-        <li><a href="#contact">Request Demo</a></li>
-        <li>WhatsApp</li>
-        <li>Email</li>
-        <li>Jharkhand, India</li>
+
+        <li>
+          <a href="#contact">
+            Request Demo
+          </a>
+        </li>
+
+        <li>
+          <a
+            href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school."
+            target="_blank">
+            WhatsApp: +91 92340 11955
+          </a>
+        </li>
+
+        <li>
+          <a href="mailto:abhifund@gmail.com">
+            Email: abhifund@gmail.com
+          </a>
+        </li>
+
+        <li>
+          Jharkhand, India
+        </li>
+
       </ul>
 
     </div>
@@ -1418,8 +1683,7 @@
 
 </footer>
 
-
-<!-- WHATSAPP -->
+<!-- FLOATING WHATSAPP -->
 
 <a
   class="whatsapp"
@@ -1428,20 +1692,6 @@
   aria-label="Chat on WhatsApp">
   ☎
 </a>
-
-
-<script>
-
-function submitForm(event) {
-  event.preventDefault();
-
-  alert(
-    "Thank you for contacting CikNotebooks! " +
-    "The enquiry form will be connected to the official email system before launch."
-  );
-}
-
-</script>
 
 </body>
 </html>
