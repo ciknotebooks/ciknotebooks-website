@@ -171,6 +171,13 @@ footer a:hover{color:#ffd25b}
 .cik-ai-input{flex:1;border:1px solid #d8deea;border-radius:22px;padding:11px 14px;margin:0;outline:none;font-size:14px}
 .cik-ai-input:focus{border-color:#102a56}
 .cik-ai-send{width:44px;height:44px;padding:0;border-radius:50%;background:#f0ae00;color:#102a56;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cik-ai-voice{width:44px;height:44px;padding:0;border-radius:50%;background:#102a56;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.cik-ai-voice.listening{background:#d92d20;animation:cikVoicePulse 1s infinite}
+.cik-ai-voice.unsupported{opacity:.45;cursor:not-allowed}
+.cik-ai-status{font-size:11px;color:#667085;padding:0 13px 8px;background:#fff;min-height:16px}
+.cik-ai-speak{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;margin-right:4px;width:30px;height:28px;padding:0;border:1px solid #dce2ec;border-radius:14px;background:#fff;color:#102a56;font-size:14px;cursor:pointer}
+.cik-ai-speak:hover{background:#f2f5fa}
+@keyframes cikVoicePulse{0%,100%{box-shadow:0 0 0 0 rgba(217,45,32,.35)}50%{box-shadow:0 0 0 7px rgba(217,45,32,0)}}
 .cik-ai-suggestion{border:1px solid #dce2ec;background:#fff;color:#102a56;border-radius:20px;padding:7px 10px;font-size:11px;cursor:pointer;width:auto;margin:3px}
 .cik-ai-suggestion:hover{background:#f2f5fa}
 
@@ -697,9 +704,11 @@ Ask me about CikNotebooks, future-ready learning, AI, technology, entrepreneursh
 </div>
 </div>
 
+<div class="cik-ai-status" id="cikAiVoiceStatus" aria-live="polite"></div>
 <div class="cik-ai-input-area">
 <input type="text" id="cikAiInput" class="cik-ai-input" placeholder="Ask CikNotebooks AI..." autocomplete="off">
-<button id="cikAiSend" class="cik-ai-send" aria-label="Send message">➤</button>
+<button id="cikAiVoice" class="cik-ai-voice" aria-label="Speak to CikNotebooks AI" title="Speak">🎤</button>
+<button id="cikAiSend" class="cik-ai-send" aria-label="Send message" title="Send">➤</button>
 </div>
 </div>
 
@@ -858,88 +867,245 @@ mobileMenu.querySelectorAll("a").forEach(link=>link.addEventListener("click",()=
 }));
 
 /* =====================================================
-   CIKNOTEBOOKS AI ASSISTANT
-   Existing Worker preserved exactly.
+   CIKNOTEBOOKS AI ASSISTANT + VOICE ASSISTANT
+   Existing Cloudflare AI Worker preserved.
+   Voice is handled locally by the browser.
    ===================================================== */
 
 const CIK_AI_WORKER =
 "https://ciknotebooks-ai.abhishek88096.workers.dev";
 
-const cikAiButton =
-document.getElementById("cikAiButton");
+const cikAiButton = document.getElementById("cikAiButton");
+const cikAiChat = document.getElementById("cikAiChat");
+const cikAiClose = document.getElementById("cikAiClose");
+const cikAiInput = document.getElementById("cikAiInput");
+const cikAiSend = document.getElementById("cikAiSend");
+const cikAiMessages = document.getElementById("cikAiMessages");
+const cikAiVoice = document.getElementById("cikAiVoice");
+const cikAiVoiceStatus = document.getElementById("cikAiVoiceStatus");
 
-const cikAiChat =
-document.getElementById("cikAiChat");
+let cikRecognition = null;
+let cikIsListening = false;
+let cikVoiceInputActive = false;
+let cikCurrentUtterance = null;
 
-const cikAiClose =
-document.getElementById("cikAiClose");
-
-const cikAiInput =
-document.getElementById("cikAiInput");
-
-const cikAiSend =
-document.getElementById("cikAiSend");
-
-const cikAiMessages =
-document.getElementById("cikAiMessages");
-
-
-/* OPEN AI CHAT */
 cikAiButton.addEventListener("click", function(){
     cikAiChat.classList.add("active");
     cikAiInput.focus();
 });
 
-
-/* CLOSE AI CHAT */
 cikAiClose.addEventListener("click", function(){
+    stopCikVoiceRecognition();
+    stopCikSpeech();
     cikAiChat.classList.remove("active");
 });
 
+function cikSetVoiceStatus(text){
+    cikAiVoiceStatus.textContent = text || "";
+}
 
-/* ADD MESSAGE */
-function cikAddMessage(text,type){
+function speakCikText(text){
+    if(!("speechSynthesis" in window)){
+        cikSetVoiceStatus("Voice playback is not supported in this browser.");
+        return;
+    }
+
+    stopCikSpeech();
+
+    const cleanText = String(text || "").replace(/\s+/g," ").trim();
+    if(!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = /[\u0900-\u097F]/.test(cleanText) ? "hi-IN" : "en-IN";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+
+    utterance.onstart = function(){
+        cikSetVoiceStatus("🔊 Speaking...");
+    };
+
+    utterance.onend = function(){
+        cikCurrentUtterance = null;
+        cikSetVoiceStatus("");
+    };
+
+    utterance.onerror = function(){
+        cikCurrentUtterance = null;
+        cikSetVoiceStatus("");
+    };
+
+    cikCurrentUtterance = utterance;
+    window.speechSynthesis.speak(utterance);
+}
+
+function stopCikSpeech(){
+    if("speechSynthesis" in window){
+        window.speechSynthesis.cancel();
+    }
+    cikCurrentUtterance = null;
+}
+
+function cikAddMessage(text,type,enableSpeak){
     const message = document.createElement("div");
 
     message.className =
         "cik-ai-message " +
-        (type === "user"
-        ? "cik-ai-user"
-        : "cik-ai-bot");
+        (type === "user" ? "cik-ai-user" : "cik-ai-bot");
 
-    message.textContent = text;
+    const textNode = document.createElement("div");
+    textNode.textContent = text;
+    message.appendChild(textNode);
+
+    if(type !== "user" && enableSpeak !== false){
+        const speakButton = document.createElement("button");
+        speakButton.className = "cik-ai-speak";
+        speakButton.type = "button";
+        speakButton.title = "Listen";
+        speakButton.setAttribute("aria-label","Listen to this answer");
+        speakButton.textContent = "🔊";
+        speakButton.addEventListener("click", function(){
+            speakCikText(text);
+        });
+        message.appendChild(speakButton);
+    }
 
     cikAiMessages.appendChild(message);
-
-    cikAiMessages.scrollTop =
-        cikAiMessages.scrollHeight;
+    cikAiMessages.scrollTop = cikAiMessages.scrollHeight;
 
     return message;
 }
 
+function setupCikVoiceRecognition(){
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
-/* SEND MESSAGE */
+    if(!SpeechRecognition){
+        cikAiVoice.classList.add("unsupported");
+        cikAiVoice.disabled = true;
+        cikAiVoice.title = "Voice input is not supported in this browser";
+        cikSetVoiceStatus("🎤 Voice input needs Chrome/Edge on a supported device.");
+        return;
+    }
+
+    cikRecognition = new SpeechRecognition();
+    cikRecognition.lang = "en-IN";
+    cikRecognition.continuous = false;
+    cikRecognition.interimResults = true;
+    cikRecognition.maxAlternatives = 1;
+
+    cikRecognition.onstart = function(){
+        cikIsListening = true;
+        cikAiVoice.classList.add("listening");
+        cikAiVoice.textContent = "⏹";
+        cikAiVoice.title = "Stop listening";
+        cikSetVoiceStatus("🎤 Listening... Speak now.");
+    };
+
+    cikRecognition.onresult = function(event){
+        let finalText = "";
+        let interimText = "";
+
+        for(let i = event.resultIndex; i < event.results.length; i++){
+            const transcript = event.results[i][0].transcript;
+            if(event.results[i].isFinal){
+                finalText += transcript;
+            }else{
+                interimText += transcript;
+            }
+        }
+
+        const current = (finalText || interimText).trim();
+        if(current){
+            cikAiInput.value = current;
+        }
+
+        if(finalText.trim()){
+            cikSetVoiceStatus("Voice captured. Sending to CikNotebooks AI...");
+            cikVoiceInputActive = true;
+            setTimeout(function(){
+                cikSendMessage();
+            },250);
+        }
+    };
+
+    cikRecognition.onerror = function(event){
+        console.error("CikNotebooks voice input error:",event.error);
+        cikIsListening = false;
+        cikAiVoice.classList.remove("listening");
+        cikAiVoice.textContent = "🎤";
+        cikAiVoice.title = "Speak";
+        cikVoiceInputActive = false;
+
+        if(event.error === "not-allowed" || event.error === "service-not-allowed"){
+            cikSetVoiceStatus("Microphone permission was blocked. Please allow microphone access.");
+        }else if(event.error === "no-speech"){
+            cikSetVoiceStatus("No speech detected. Tap 🎤 and try again.");
+        }else{
+            cikSetVoiceStatus("Voice input could not start. Please try again.");
+        }
+    };
+
+    cikRecognition.onend = function(){
+        cikIsListening = false;
+        cikAiVoice.classList.remove("listening");
+        cikAiVoice.textContent = "🎤";
+        cikAiVoice.title = "Speak";
+    };
+}
+
+function stopCikVoiceRecognition(){
+    if(cikRecognition && cikIsListening){
+        try{ cikRecognition.stop(); }catch(_){}
+    }
+    cikIsListening = false;
+    cikVoiceInputActive = false;
+    cikAiVoice.classList.remove("listening");
+    cikAiVoice.textContent = "🎤";
+    cikAiVoice.title = "Speak";
+}
+
+cikAiVoice.addEventListener("click", function(){
+    if(!cikRecognition){
+        setupCikVoiceRecognition();
+    }
+
+    if(!cikRecognition) return;
+
+    if(cikIsListening){
+        stopCikVoiceRecognition();
+        cikSetVoiceStatus("");
+        return;
+    }
+
+    stopCikSpeech();
+    cikAiInput.focus();
+
+    try{
+        cikRecognition.start();
+    }catch(error){
+        console.error("Could not start voice recognition:",error);
+        cikSetVoiceStatus("Please wait a moment and tap 🎤 again.");
+    }
+});
+
 async function cikSendMessage(){
 
-    const message =
-        cikAiInput.value.trim();
+    const message = cikAiInput.value.trim();
 
     if(!message) return;
 
-    cikAddMessage(
-        message,
-        "user"
-    );
+    const shouldSpeakAnswer = cikVoiceInputActive;
+    cikVoiceInputActive = false;
 
+    cikAddMessage(message,"user",false);
     cikAiInput.value = "";
 
     const loadingMessage =
-        cikAddMessage(
-            "Thinking... 🤔",
-            "bot"
-        );
+        cikAddMessage("Thinking... 🤔","bot",false);
 
     cikAiSend.disabled = true;
+    cikAiVoice.disabled = true;
 
     try{
 
@@ -948,97 +1114,74 @@ async function cikSendMessage(){
                 CIK_AI_WORKER,
                 {
                     method:"POST",
-
                     headers:{
-                        "Content-Type":
-                        "application/json"
+                        "Content-Type":"application/json"
                     },
-
-                    body:
-                    JSON.stringify({
+                    body:JSON.stringify({
                         message:message
                     })
                 }
             );
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
         loadingMessage.remove();
 
         if(data.answer){
+            cikAddMessage(data.answer,"bot",true);
 
-            cikAddMessage(
-                data.answer,
-                "bot"
-            );
-
+            if(shouldSpeakAnswer){
+                setTimeout(function(){
+                    speakCikText(data.answer);
+                },150);
+            }
         }else{
-
             cikAddMessage(
                 "Sorry, I couldn't get an answer right now. Please try again.",
-                "bot"
+                "bot",
+                true
             );
-
         }
 
     }catch(error){
 
-        console.error(
-            "CikNotebooks AI Error:",
-            error
-        );
+        console.error("CikNotebooks AI Error:",error);
 
         loadingMessage.remove();
 
         cikAddMessage(
             "I'm having trouble connecting right now. Please try again in a moment.",
-            "bot"
+            "bot",
+            true
         );
 
     }finally{
-
         cikAiSend.disabled = false;
-
+        cikAiVoice.disabled = false;
         cikAiInput.focus();
 
-    }
-}
-
-
-/* SEND BUTTON */
-cikAiSend.addEventListener(
-    "click",
-    cikSendMessage
-);
-
-
-/* ENTER KEY */
-cikAiInput.addEventListener(
-    "keydown",
-    function(event){
-
-        if(event.key === "Enter"){
-
-            event.preventDefault();
-
-            cikSendMessage();
-
+        if(cikAiVoiceStatus.textContent.indexOf("Sending") === 0){
+            cikSetVoiceStatus("");
         }
-
     }
-);
-
-
-/* SUGGESTION BUTTONS */
-function cikAskSuggestion(question){
-
-    cikAiInput.value =
-        question;
-
-    cikSendMessage();
-
 }
+
+cikAiSend.addEventListener("click",cikSendMessage);
+
+cikAiInput.addEventListener("keydown",function(event){
+    if(event.key === "Enter"){
+        event.preventDefault();
+        cikSendMessage();
+    }
+});
+
+function cikAskSuggestion(question){
+    cikAiInput.value = question;
+    cikSendMessage();
+}
+
+setupCikVoiceRecognition();
+
 </script>
 
 </body>
