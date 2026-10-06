@@ -101,6 +101,17 @@ section{padding:90px 0}
 .form-group label{display:block;font-size:13px;font-weight:700;color:#263248;margin-bottom:6px}
 .form-group input,.form-group select,.form-group textarea{margin-bottom:0}
 .form-group.full{grid-column:1/-1}
+.segment-selection-box{margin:4px 0 18px;padding:18px;border:1px solid #dfe5ef;border-radius:12px;background:#f8faff}
+.segment-selection-title{display:block;font-size:14px;font-weight:800;color:#102a56;margin-bottom:4px}
+.segment-selection-note{font-size:12px;color:#687287;margin-bottom:14px}
+.segment-quantity-row{display:grid;grid-template-columns:1fr 150px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #e7ebf2}
+.segment-quantity-row:last-of-type{border-bottom:none}
+.segment-quantity-row label{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:#263248;cursor:pointer}
+.segment-quantity-row label input{width:auto;margin:0}
+.segment-qty{width:100%;margin:0!important;padding:10px!important}
+.segment-qty:disabled{background:#edf1f6;color:#9aa3b2;cursor:not-allowed}
+.segment-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:13px 14px;border-radius:9px;background:#102a56;color:#fff}
+.segment-total-row strong:last-child{font-size:20px;color:#ffd25b}
 .requirement-form textarea{min-height:120px}
 .checkbox-row{display:flex;align-items:flex-start;gap:9px;margin:10px 0 18px;color:#5f6b80;font-size:13px}
 .checkbox-row input{width:auto;margin-top:4px}
@@ -171,13 +182,6 @@ footer a:hover{color:#ffd25b}
 .cik-ai-input{flex:1;border:1px solid #d8deea;border-radius:22px;padding:11px 14px;margin:0;outline:none;font-size:14px}
 .cik-ai-input:focus{border-color:#102a56}
 .cik-ai-send{width:44px;height:44px;padding:0;border-radius:50%;background:#f0ae00;color:#102a56;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cik-ai-voice{width:44px;height:44px;padding:0;border-radius:50%;background:#102a56;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
-.cik-ai-voice.listening{background:#d92d20;animation:cikVoicePulse 1s infinite}
-.cik-ai-voice.unsupported{opacity:.45;cursor:not-allowed}
-.cik-ai-status{font-size:11px;color:#667085;padding:0 13px 8px;background:#fff;min-height:16px}
-.cik-ai-speak{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;margin-right:4px;width:30px;height:28px;padding:0;border:1px solid #dce2ec;border-radius:14px;background:#fff;color:#102a56;font-size:14px;cursor:pointer}
-.cik-ai-speak:hover{background:#f2f5fa}
-@keyframes cikVoicePulse{0%,100%{box-shadow:0 0 0 0 rgba(217,45,32,.35)}50%{box-shadow:0 0 0 7px rgba(217,45,32,0)}}
 .cik-ai-suggestion{border:1px solid #dce2ec;background:#fff;color:#102a56;border-radius:20px;padding:7px 10px;font-size:11px;cursor:pointer;width:auto;margin:3px}
 .cik-ai-suggestion:hover{background:#f2f5fa}
 
@@ -193,6 +197,7 @@ footer a:hover{color:#ffd25b}
 }
 
 @media(max-width:600px){
+.segment-quantity-row{grid-template-columns:1fr 110px}
 section{padding:65px 0}
 .hero{padding:70px 0}
 h1{font-size:43px}
@@ -425,25 +430,42 @@ h1{font-size:43px}
 </div>
 </div>
 
-<div class="form-row">
-<div class="form-group">
-<label for="reqSegment">Segment *</label>
-<select id="reqSegment" name="segment" required>
-<option value="">Select segment</option>
-<option value="Segment 1 — Classes 1–3">Segment 1 — Classes 1–3</option>
-<option value="Segment 2 — Classes 4–6">Segment 2 — Classes 4–6</option>
-<option value="Segment 3 — Classes 7–9">Segment 3 — Classes 7–9</option>
-<option value="Segment 4 — Classes 10–12">Segment 4 — Classes 10–12</option>
-<option value="Multiple Segments">Multiple Segments</option>
-</select>
+<div class="segment-selection-box">
+<label class="segment-selection-title">Select Segment(s) & Enter Quantity *</label>
+<p class="segment-selection-note">Choose any segment(s). Enter the notebook quantity required for each selected segment.</p>
+
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 1 — Classes 1–3"> <span>Segment 1 — Classes 1–3</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 1 — Classes 1–3" min="1" placeholder="Quantity" disabled>
 </div>
-<div class="form-group">
-<label for="reqStudents">Approx. Students *</label>
-<input id="reqStudents" name="students" type="number" min="1" placeholder="e.g. 600" required>
+
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 2 — Classes 4–6"> <span>Segment 2 — Classes 4–6</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 2 — Classes 4–6" min="1" placeholder="Quantity" disabled>
 </div>
+
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 3 — Classes 7–9"> <span>Segment 3 — Classes 7–9</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 3 — Classes 7–9" min="1" placeholder="Quantity" disabled>
+</div>
+
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 4 — Classes 10–12"> <span>Segment 4 — Classes 10–12</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 4 — Classes 10–12" min="1" placeholder="Quantity" disabled>
+</div>
+
+<div class="segment-total-row">
+<strong>Total Required Quantity</strong>
+<strong id="reqQuantityDisplay">0</strong>
+</div>
+<input type="hidden" id="reqQuantity" name="required_quantity" value="0">
 </div>
 
 <div class="form-row">
+<div class="form-group">
+<label for="reqStudents">Approx. Students (Optional)</label>
+<input id="reqStudents" name="students" type="number" min="0" placeholder="e.g. 600">
+</div>
 <div class="form-group">
 <label for="reqPerStudent">Notebooks per Student</label>
 <select id="reqPerStudent" name="notebooks_per_student">
@@ -451,12 +473,7 @@ h1{font-size:43px}
 <option value="2">2 notebooks</option>
 <option value="3">3 notebooks</option>
 <option value="4">4 notebooks</option>
-<option value="custom">Custom quantity</option>
 </select>
-</div>
-<div class="form-group">
-<label for="reqQuantity">Required Quantity *</label>
-<input id="reqQuantity" name="required_quantity" type="number" min="1" placeholder="Automatically calculated" required>
 </div>
 </div>
 
@@ -704,11 +721,9 @@ Ask me about CikNotebooks, future-ready learning, AI, technology, entrepreneursh
 </div>
 </div>
 
-<div class="cik-ai-status" id="cikAiVoiceStatus" aria-live="polite"></div>
 <div class="cik-ai-input-area">
 <input type="text" id="cikAiInput" class="cik-ai-input" placeholder="Ask CikNotebooks AI..." autocomplete="off">
-<button id="cikAiVoice" class="cik-ai-voice" aria-label="Speak to CikNotebooks AI" title="Speak">🎤</button>
-<button id="cikAiSend" class="cik-ai-send" aria-label="Send message" title="Send">➤</button>
+<button id="cikAiSend" class="cik-ai-send" aria-label="Send message">➤</button>
 </div>
 </div>
 
@@ -726,21 +741,41 @@ const CIK_B2B_PORTAL = "https://ciknotebooks-b2b.abhishek88096.workers.dev/porta
 const reqStudents = document.getElementById("reqStudents");
 const reqPerStudent = document.getElementById("reqPerStudent");
 const reqQuantity = document.getElementById("reqQuantity");
+const reqQuantityDisplay = document.getElementById("reqQuantityDisplay");
+const segmentChecks = Array.from(document.querySelectorAll(".segment-check"));
+const segmentQtyInputs = Array.from(document.querySelectorAll(".segment-qty"));
 
-function updateRequirementQuantity(){
-    const students = parseInt(reqStudents.value,10) || 0;
-    const perStudent = reqPerStudent.value;
-    if(perStudent !== "custom" && students > 0){
-        reqQuantity.value = students * parseInt(perStudent,10);
-    }else if(perStudent === "custom"){
-        reqQuantity.value = "";
-    }
+function updateSegmentQuantities(){
+    let total = 0;
+    segmentChecks.forEach(check => {
+        const qty = document.querySelector('.segment-qty[data-segment="' + CSS.escape(check.dataset.segment) + '"]');
+        if(!qty) return;
+        qty.disabled = !check.checked;
+        if(!check.checked) qty.value = "";
+        const value = Number(qty.value || 0);
+        if(check.checked && value > 0) total += value;
+    });
+    reqQuantity.value = total;
+    reqQuantityDisplay.textContent = total.toLocaleString("en-IN");
 }
-reqStudents.addEventListener("input", updateRequirementQuantity);
-reqPerStudent.addEventListener("change", updateRequirementQuantity);
+
+segmentChecks.forEach(check => check.addEventListener("change", updateSegmentQuantities));
+segmentQtyInputs.forEach(input => input.addEventListener("input", updateSegmentQuantities));
+
+function getSelectedSegments(){
+    return segmentChecks
+        .filter(check => check.checked)
+        .map(check => {
+            const qty = document.querySelector('.segment-qty[data-segment="' + CSS.escape(check.dataset.segment) + '"]');
+            return {segment: check.dataset.segment, quantity: Number(qty?.value || 0)};
+        })
+        .filter(item => item.quantity > 0);
+}
 
 function buildRequirementData(){
-    const perStudent = document.getElementById("reqPerStudent").value;
+    const perStudent = Number(document.getElementById("reqPerStudent").value || 1);
+    const segments = getSelectedSegments();
+    const totalQuantity = segments.reduce((sum,item) => sum + item.quantity, 0);
     return {
         school_name: document.getElementById("reqSchoolName").value.trim(),
         contact_person: document.getElementById("reqContact").value.trim(),
@@ -748,10 +783,11 @@ function buildRequirementData(){
         phone: document.getElementById("reqPhone").value.trim(),
         email: document.getElementById("reqEmail").value.trim(),
         city: document.getElementById("reqCity").value.trim(),
-        segment: document.getElementById("reqSegment").value,
+        segment: segments.map(item => item.segment).join(", "),
+        segments: segments,
         students: Number(document.getElementById("reqStudents").value || 0),
-        notebooks_per_student: perStudent === "custom" ? 1 : Number(perStudent || 1),
-        quantity: Number(document.getElementById("reqQuantity").value || 0),
+        notebooks_per_student: perStudent,
+        quantity: totalQuantity,
         custom_cover: document.getElementById("reqCover").value,
         custom_content: document.getElementById("reqContent").value,
         delivery_date: document.getElementById("reqDelivery").value,
@@ -767,9 +803,9 @@ function formatRequirementSummary(id,data){
     "\nPhone: " + data.phone +
     "\nEmail: " + data.email +
     "\nCity: " + data.city +
-    "\nSegment: " + data.segment +
-    "\nStudents: " + data.students +
-    "\nRequired Notebooks: " + data.quantity +
+    "\nSegments & Quantities: " + data.segments.map(item => item.segment + " = " + item.quantity).join(" | ") +
+    "\nStudents: " + (data.students || "Not specified") +
+    "\nTotal Required Notebooks: " + data.quantity +
     "\nCustom Cover: " + data.custom_cover +
     "\nCustom Content: " + data.custom_content +
     (data.delivery_date ? "\nPreferred Delivery Date: " + data.delivery_date : "") +
@@ -783,6 +819,12 @@ async function submitSchoolRequirement(event){
     const errorBox = document.getElementById("requestError");
     const successBox = document.getElementById("requestSuccess");
     const data = buildRequirementData();
+
+    if(!data.segments.length || data.quantity <= 0){
+        errorBox.textContent = "Please select at least one segment and enter its required quantity.";
+        errorBox.classList.add("active");
+        return;
+    }
 
     errorBox.classList.remove("active");
     errorBox.textContent = "";
@@ -848,7 +890,9 @@ document.getElementById("newRequirementButton").addEventListener("click",functio
     document.getElementById("requestError").classList.remove("active");
     form.querySelector(".requirement-submit").disabled = false;
     form.querySelector(".requirement-submit").textContent = "Submit School Requirement";
-    updateRequirementQuantity();
+    segmentChecks.forEach(check => check.checked = false);
+    segmentQtyInputs.forEach(input => { input.value = ""; input.disabled = true; });
+    updateSegmentQuantities();
     document.getElementById("school-request").scrollIntoView({behavior:"smooth",block:"start"});
 });
 
@@ -867,245 +911,88 @@ mobileMenu.querySelectorAll("a").forEach(link=>link.addEventListener("click",()=
 }));
 
 /* =====================================================
-   CIKNOTEBOOKS AI ASSISTANT + VOICE ASSISTANT
-   Existing Cloudflare AI Worker preserved.
-   Voice is handled locally by the browser.
+   CIKNOTEBOOKS AI ASSISTANT
+   Existing Worker preserved exactly.
    ===================================================== */
 
 const CIK_AI_WORKER =
 "https://ciknotebooks-ai.abhishek88096.workers.dev";
 
-const cikAiButton = document.getElementById("cikAiButton");
-const cikAiChat = document.getElementById("cikAiChat");
-const cikAiClose = document.getElementById("cikAiClose");
-const cikAiInput = document.getElementById("cikAiInput");
-const cikAiSend = document.getElementById("cikAiSend");
-const cikAiMessages = document.getElementById("cikAiMessages");
-const cikAiVoice = document.getElementById("cikAiVoice");
-const cikAiVoiceStatus = document.getElementById("cikAiVoiceStatus");
+const cikAiButton =
+document.getElementById("cikAiButton");
 
-let cikRecognition = null;
-let cikIsListening = false;
-let cikVoiceInputActive = false;
-let cikCurrentUtterance = null;
+const cikAiChat =
+document.getElementById("cikAiChat");
 
+const cikAiClose =
+document.getElementById("cikAiClose");
+
+const cikAiInput =
+document.getElementById("cikAiInput");
+
+const cikAiSend =
+document.getElementById("cikAiSend");
+
+const cikAiMessages =
+document.getElementById("cikAiMessages");
+
+
+/* OPEN AI CHAT */
 cikAiButton.addEventListener("click", function(){
     cikAiChat.classList.add("active");
     cikAiInput.focus();
 });
 
+
+/* CLOSE AI CHAT */
 cikAiClose.addEventListener("click", function(){
-    stopCikVoiceRecognition();
-    stopCikSpeech();
     cikAiChat.classList.remove("active");
 });
 
-function cikSetVoiceStatus(text){
-    cikAiVoiceStatus.textContent = text || "";
-}
 
-function speakCikText(text){
-    if(!("speechSynthesis" in window)){
-        cikSetVoiceStatus("Voice playback is not supported in this browser.");
-        return;
-    }
-
-    stopCikSpeech();
-
-    const cleanText = String(text || "").replace(/\s+/g," ").trim();
-    if(!cleanText) return;
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = /[\u0900-\u097F]/.test(cleanText) ? "hi-IN" : "en-IN";
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-
-    utterance.onstart = function(){
-        cikSetVoiceStatus("🔊 Speaking...");
-    };
-
-    utterance.onend = function(){
-        cikCurrentUtterance = null;
-        cikSetVoiceStatus("");
-    };
-
-    utterance.onerror = function(){
-        cikCurrentUtterance = null;
-        cikSetVoiceStatus("");
-    };
-
-    cikCurrentUtterance = utterance;
-    window.speechSynthesis.speak(utterance);
-}
-
-function stopCikSpeech(){
-    if("speechSynthesis" in window){
-        window.speechSynthesis.cancel();
-    }
-    cikCurrentUtterance = null;
-}
-
-function cikAddMessage(text,type,enableSpeak){
+/* ADD MESSAGE */
+function cikAddMessage(text,type){
     const message = document.createElement("div");
 
     message.className =
         "cik-ai-message " +
-        (type === "user" ? "cik-ai-user" : "cik-ai-bot");
+        (type === "user"
+        ? "cik-ai-user"
+        : "cik-ai-bot");
 
-    const textNode = document.createElement("div");
-    textNode.textContent = text;
-    message.appendChild(textNode);
-
-    if(type !== "user" && enableSpeak !== false){
-        const speakButton = document.createElement("button");
-        speakButton.className = "cik-ai-speak";
-        speakButton.type = "button";
-        speakButton.title = "Listen";
-        speakButton.setAttribute("aria-label","Listen to this answer");
-        speakButton.textContent = "🔊";
-        speakButton.addEventListener("click", function(){
-            speakCikText(text);
-        });
-        message.appendChild(speakButton);
-    }
+    message.textContent = text;
 
     cikAiMessages.appendChild(message);
-    cikAiMessages.scrollTop = cikAiMessages.scrollHeight;
+
+    cikAiMessages.scrollTop =
+        cikAiMessages.scrollHeight;
 
     return message;
 }
 
-function setupCikVoiceRecognition(){
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
 
-    if(!SpeechRecognition){
-        cikAiVoice.classList.add("unsupported");
-        cikAiVoice.disabled = true;
-        cikAiVoice.title = "Voice input is not supported in this browser";
-        cikSetVoiceStatus("🎤 Voice input needs Chrome/Edge on a supported device.");
-        return;
-    }
-
-    cikRecognition = new SpeechRecognition();
-    cikRecognition.lang = "en-IN";
-    cikRecognition.continuous = false;
-    cikRecognition.interimResults = true;
-    cikRecognition.maxAlternatives = 1;
-
-    cikRecognition.onstart = function(){
-        cikIsListening = true;
-        cikAiVoice.classList.add("listening");
-        cikAiVoice.textContent = "⏹";
-        cikAiVoice.title = "Stop listening";
-        cikSetVoiceStatus("🎤 Listening... Speak now.");
-    };
-
-    cikRecognition.onresult = function(event){
-        let finalText = "";
-        let interimText = "";
-
-        for(let i = event.resultIndex; i < event.results.length; i++){
-            const transcript = event.results[i][0].transcript;
-            if(event.results[i].isFinal){
-                finalText += transcript;
-            }else{
-                interimText += transcript;
-            }
-        }
-
-        const current = (finalText || interimText).trim();
-        if(current){
-            cikAiInput.value = current;
-        }
-
-        if(finalText.trim()){
-            cikSetVoiceStatus("Voice captured. Sending to CikNotebooks AI...");
-            cikVoiceInputActive = true;
-            setTimeout(function(){
-                cikSendMessage();
-            },250);
-        }
-    };
-
-    cikRecognition.onerror = function(event){
-        console.error("CikNotebooks voice input error:",event.error);
-        cikIsListening = false;
-        cikAiVoice.classList.remove("listening");
-        cikAiVoice.textContent = "🎤";
-        cikAiVoice.title = "Speak";
-        cikVoiceInputActive = false;
-
-        if(event.error === "not-allowed" || event.error === "service-not-allowed"){
-            cikSetVoiceStatus("Microphone permission was blocked. Please allow microphone access.");
-        }else if(event.error === "no-speech"){
-            cikSetVoiceStatus("No speech detected. Tap 🎤 and try again.");
-        }else{
-            cikSetVoiceStatus("Voice input could not start. Please try again.");
-        }
-    };
-
-    cikRecognition.onend = function(){
-        cikIsListening = false;
-        cikAiVoice.classList.remove("listening");
-        cikAiVoice.textContent = "🎤";
-        cikAiVoice.title = "Speak";
-    };
-}
-
-function stopCikVoiceRecognition(){
-    if(cikRecognition && cikIsListening){
-        try{ cikRecognition.stop(); }catch(_){}
-    }
-    cikIsListening = false;
-    cikVoiceInputActive = false;
-    cikAiVoice.classList.remove("listening");
-    cikAiVoice.textContent = "🎤";
-    cikAiVoice.title = "Speak";
-}
-
-cikAiVoice.addEventListener("click", function(){
-    if(!cikRecognition){
-        setupCikVoiceRecognition();
-    }
-
-    if(!cikRecognition) return;
-
-    if(cikIsListening){
-        stopCikVoiceRecognition();
-        cikSetVoiceStatus("");
-        return;
-    }
-
-    stopCikSpeech();
-    cikAiInput.focus();
-
-    try{
-        cikRecognition.start();
-    }catch(error){
-        console.error("Could not start voice recognition:",error);
-        cikSetVoiceStatus("Please wait a moment and tap 🎤 again.");
-    }
-});
-
+/* SEND MESSAGE */
 async function cikSendMessage(){
 
-    const message = cikAiInput.value.trim();
+    const message =
+        cikAiInput.value.trim();
 
     if(!message) return;
 
-    const shouldSpeakAnswer = cikVoiceInputActive;
-    cikVoiceInputActive = false;
+    cikAddMessage(
+        message,
+        "user"
+    );
 
-    cikAddMessage(message,"user",false);
     cikAiInput.value = "";
 
     const loadingMessage =
-        cikAddMessage("Thinking... 🤔","bot",false);
+        cikAddMessage(
+            "Thinking... 🤔",
+            "bot"
+        );
 
     cikAiSend.disabled = true;
-    cikAiVoice.disabled = true;
 
     try{
 
@@ -1114,74 +1001,97 @@ async function cikSendMessage(){
                 CIK_AI_WORKER,
                 {
                     method:"POST",
+
                     headers:{
-                        "Content-Type":"application/json"
+                        "Content-Type":
+                        "application/json"
                     },
-                    body:JSON.stringify({
+
+                    body:
+                    JSON.stringify({
                         message:message
                     })
                 }
             );
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         loadingMessage.remove();
 
         if(data.answer){
-            cikAddMessage(data.answer,"bot",true);
 
-            if(shouldSpeakAnswer){
-                setTimeout(function(){
-                    speakCikText(data.answer);
-                },150);
-            }
+            cikAddMessage(
+                data.answer,
+                "bot"
+            );
+
         }else{
+
             cikAddMessage(
                 "Sorry, I couldn't get an answer right now. Please try again.",
-                "bot",
-                true
+                "bot"
             );
+
         }
 
     }catch(error){
 
-        console.error("CikNotebooks AI Error:",error);
+        console.error(
+            "CikNotebooks AI Error:",
+            error
+        );
 
         loadingMessage.remove();
 
         cikAddMessage(
             "I'm having trouble connecting right now. Please try again in a moment.",
-            "bot",
-            true
+            "bot"
         );
 
     }finally{
+
         cikAiSend.disabled = false;
-        cikAiVoice.disabled = false;
+
         cikAiInput.focus();
 
-        if(cikAiVoiceStatus.textContent.indexOf("Sending") === 0){
-            cikSetVoiceStatus("");
+    }
+}
+
+
+/* SEND BUTTON */
+cikAiSend.addEventListener(
+    "click",
+    cikSendMessage
+);
+
+
+/* ENTER KEY */
+cikAiInput.addEventListener(
+    "keydown",
+    function(event){
+
+        if(event.key === "Enter"){
+
+            event.preventDefault();
+
+            cikSendMessage();
+
         }
+
     }
-}
+);
 
-cikAiSend.addEventListener("click",cikSendMessage);
 
-cikAiInput.addEventListener("keydown",function(event){
-    if(event.key === "Enter"){
-        event.preventDefault();
-        cikSendMessage();
-    }
-});
-
+/* SUGGESTION BUTTONS */
 function cikAskSuggestion(question){
-    cikAiInput.value = question;
+
+    cikAiInput.value =
+        question;
+
     cikSendMessage();
+
 }
-
-setupCikVoiceRecognition();
-
 </script>
 
 </body>
