@@ -1,1073 +1,215 @@
-const FALLBACK_ADMIN_KEY = "CikNotebooks@2026#Admin";
-
-const ADMIN_COOKIE = "cik_admin_session";
-const SCHOOL_COOKIE = "cik_school_session";
-const SCHOOL_MAX_AGE = 12 * 60 * 60;
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS"
-};
-
-const STATUSES = [
-  "New Requirement",
-  "Quotation Changes Requested",
-  "Quotation Sent",
-  "Quotation Approved",
-  "Payment Received",
-  "PO Received",
-  "Design Approval",
-  "Production Started",
-  "Quality Check",
-  "Ready for Dispatch",
-  "Delivered",
-  "Renewal Due",
-  "Completed",
-  "Cancelled",
-  "Approved",
-  "Production",
-  "Invoice Generated"
-];
-
-function clean(v) {
-  return String(v ?? "").trim();
-}
-
-function num(v, fallback = 0) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function esc(v) {
-  return String(v ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function json(data, status = 200, headers = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...CORS,
-      ...headers
-    }
-  });
-}
-
-function html(data, status = 200, headers = {}) {
-  return new Response(data, {
-    status,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      ...headers
-    }
-  });
-}
-
-function redirect(url, headers = {}) {
-  return new Response(null, {
-    status: 302,
-    headers: {
-      Location: url,
-      ...headers
-    }
-  });
-}
-
-function adminKey(env) {
-  return clean(env.ADMIN_KEY) || FALLBACK_ADMIN_KEY;
-}
-
-async function hash(text) {
-  const data = new TextEncoder().encode(text);
-  const result = await crypto.subtle.digest("SHA-256", data);
-
-  return [...new Uint8Array(result)]
-    .map(x => x.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function cookie(request, name) {
-  const raw = request.headers.get("Cookie") || "";
-
-  for (const part of raw.split(";")) {
-    const i = part.indexOf("=");
-
-    if (i < 0) continue;
-
-    if (part.slice(0, i).trim() === name) {
-      try {
-        return decodeURIComponent(part.slice(i + 1).trim());
-      } catch {
-        return part.slice(i + 1).trim();
-      }
-    }
-  }
-
-  return "";
-}
-
-function setCookie(name, value, maxAge) {
-  return [
-    `${name}=${encodeURIComponent(value)}`,
-    "Path=/",
-    "HttpOnly",
-    "Secure",
-    "SameSite=Lax",
-    `Max-Age=${maxAge}`
-  ].join("; ");
-}
-
-function deleteCookie(name) {
-  return setCookie(name, "", 0);
-}
-
-async function adminSession(request, env) {
-  const value = cookie(request, ADMIN_COOKIE);
-
-  if (!value) return false;
-
-  return value === await hash(adminKey(env));
-}
-
-function normalizePhone(v) {
-  let p = String(v || "").replace(/\D/g, "");
-
-  if (p.length === 10) {
-    p = "91" + p;
-  }
-
-  if (p.length === 11 && p.startsWith("0")) {
-    p = "91" + p.slice(1);
-  }
-
-  return p;
-}
-
-function phoneMatch(a, b) {
-  return normalizePhone(a) === normalizePhone(b);
-}
-
-async function createSchoolSession(row, env) {
-  const time = Date.now();
-
-  const token = await hash(
-    `school|${row.id}|${normalizePhone(row.phone)}|${time}|${adminKey(env)}`
-  );
-
-  return `${row.id}.${time}.${token}`;
-}
-
-async function schoolSession(request, env) {
-  const value = cookie(request, SCHOOL_COOKIE);
-
-  if (!value) return null;
-
-  const parts = value.split(".");
-
-  if (parts.length !== 3) return null;
-
-  const id = Number(parts[0]);
-  const timestamp = Number(parts[1]);
-  const token = parts[2];
-
-  if (!Number.isInteger(id) || !timestamp || !token) {
-    return null;
-  }
-
-  if (Date.now() - timestamp > SCHOOL_MAX_AGE * 1000) {
-    return null;
-  }
-
-  const row = await env.DB
-    .prepare("SELECT * FROM school_requirements WHERE id = ?")
-    .bind(id)
-    .first();
-
-  if (!row) return null;
-
-  const expected = await hash(
-    `school|${id}|${normalizePhone(row.phone)}|${timestamp}|${adminKey(env)}`
-  );
-
-  return expected === token ? row : null;
-}
-
-async function db(env) {
-  await env.DB.prepare(`
-    CREATE TABLE IF NOT EXISTS school_requirements (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      requirement_id TEXT UNIQUE NOT NULL,
-      school_name TEXT NOT NULL,
-      contact_person TEXT NOT NULL,
-      designation TEXT,
-      phone TEXT NOT NULL,
-      email TEXT NOT NULL,
-      city TEXT NOT NULL,
-      segment TEXT NOT NULL,
-      students INTEGER NOT NULL,
-      notebooks_per_student INTEGER DEFAULT 1,
-      quantity INTEGER NOT NULL,
-      custom_cover TEXT DEFAULT 'No',
-      custom_content TEXT DEFAULT 'No',
-      delivery_date TEXT,
-      notes TEXT,
-      status TEXT DEFAULT 'New Requirement',
-      quotation_amount REAL,
-      po_number TEXT,
-      invoice_number TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  const columns = [
-    ["notebook_rate", "REAL DEFAULT 0"],
-    ["cover_charge", "REAL DEFAULT 0"],
-    ["content_charge", "REAL DEFAULT 0"],
-    ["gst_percent", "REAL DEFAULT 0"],
-    ["quotation_validity", "TEXT DEFAULT '15 days'"],
-    ["payment_terms", "TEXT DEFAULT 'As mutually agreed'"],
-    ["bank_details", "TEXT DEFAULT ''"],
-    ["quotation_number", "TEXT DEFAULT ''"],
-    ["quotation_date", "TEXT DEFAULT ''"],
-    ["invoice_due_date", "TEXT DEFAULT ''"],
-    ["invoice_notes", "TEXT DEFAULT ''"],
-    ["invoice_generated_at", "TEXT DEFAULT ''"],
-    ["school_change_request", "TEXT DEFAULT ''"],
-    ["quotation_approved_at", "TEXT DEFAULT ''"],
-    ["quotation_change_requested_at", "TEXT DEFAULT ''"],
-    ["payment_status", "TEXT DEFAULT 'Pending'"],
-    ["razorpay_order_id", "TEXT DEFAULT ''"],
-    ["razorpay_payment_id", "TEXT DEFAULT ''"],
-    ["razorpay_signature", "TEXT DEFAULT ''"],
-    ["payment_amount", "REAL DEFAULT 0"],
-    ["payment_paid_at", "TEXT DEFAULT ''"],
-    ["segments_json", "TEXT DEFAULT '[]'"]
-  ];
-
-  const info = await env.DB
-    .prepare("PRAGMA table_info(school_requirements)")
-    .all();
-
-  const existing = new Set(
-    (info.results || []).map(x => x.name)
-  );
-
-  for (const [name, type] of columns) {
-    if (!existing.has(name)) {
-      await env.DB
-        .prepare(
-          `ALTER TABLE school_requirements ADD COLUMN ${name} ${type}`
-        )
-        .run();
-    }
-  }
-}
-
-function reqId(id) {
-  return `CIK-${new Date().getFullYear()}-${String(id).padStart(5, "0")}`;
-}
-
-function quoteNo(id) {
-  return `CIK-Q-${new Date().getFullYear()}-${String(id).padStart(5, "0")}`;
-}
-
-function invoiceNo(id) {
-  return `CIK-INV-${new Date().getFullYear()}-${String(id).padStart(5, "0")}`;
-}
-
-function getSegments(row) {
-  try {
-    const data = JSON.parse(row.segments_json || "[]");
-
-    if (!Array.isArray(data)) return [];
-
-    return data
-      .map(item => ({
-        segment: clean(item?.segment),
-        quantity: num(item?.quantity)
-      }))
-      .filter(item => item.segment && item.quantity > 0);
-  } catch {
-    return [];
-  }
-}
-
-function totalSegmentQuantity(row) {
-  const segments = getSegments(row);
-
-  if (segments.length) {
-    return segments.reduce(
-      (total, item) => total + item.quantity,
-      0
-    );
-  }
-
-  return num(row.quantity);
-}
-
-function segmentSummary(row) {
-  const segments = getSegments(row);
-
-  if (!segments.length) {
-    return clean(row.segment);
-  }
-
-  return segments
-    .map(item => `${item.segment}: ${item.quantity}`)
-    .join(" | ");
-}
-
-function segmentRowsHtml(row) {
-  const segments = getSegments(row);
-
-  if (!segments.length) {
-    return `<tr><td>${esc(row.segment)}</td><td class="right">${esc(row.quantity)}</td></tr>`;
-  }
-
-  return segments.map(item =>
-    `<tr><td>${esc(item.segment)}</td><td class="right">${esc(item.quantity)}</td></tr>`
-  ).join("");
-}
-
-function segmentQuotationRowsHtml(row) {
-  const segments = getSegments(row);
-  const rate = num(row.notebook_rate);
-
-  if (!segments.length) {
-    return `<tr><td>CikNotebooks (${esc(row.quantity)} notebooks)</td><td class="right">₹${(num(row.quantity) * rate).toFixed(2)}</td></tr>`;
-  }
-
-  return segments.map(item => {
-    const amount = item.quantity * rate;
-    return `<tr><td>CikNotebooks — ${esc(item.segment)} (${esc(item.quantity)} × ₹${rate.toFixed(2)})</td><td class="right">₹${amount.toFixed(2)}</td></tr>`;
-  }).join("");
-}
-
-function calculation(row) {
-  const quantity = totalSegmentQuantity(row);
-  const rate = num(row.notebook_rate);
-  const cover = num(row.cover_charge);
-  const content = num(row.content_charge);
-  const gst = num(row.gst_percent);
-
-  const notebooks = quantity * rate;
-  const subtotal = notebooks + cover + content;
-  const gstAmount = subtotal * gst / 100;
-
-  return {
-    quantity,
-    notebooks,
-    cover,
-    content,
-    subtotal,
-    gst,
-    gstAmount,
-    total: subtotal + gstAmount
-  };
-}
-
-function validUntil(row) {
-  const match = String(row.quotation_validity || "15 days")
-    .match(/(\d+)/);
-
-  const days = match ? Number(match[1]) : 15;
-
-  const date = new Date(
-    row.quotation_date ||
-    row.created_at ||
-    new Date().toISOString()
-  );
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  date.setDate(date.getDate() + days);
-
-  return date.toLocaleDateString("en-IN");
-}
-
-/* ================= RAZORPAY HELPERS ================= */
-
-async function hmacHex(secret, message) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(message)
-  );
-
-  return [...new Uint8Array(signature)]
-    .map(x => x.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function razorpayOrder(amount, receipt, env) {
-  const keyId = clean(env.RAZORPAY_KEY_ID);
-  const keySecret = clean(env.RAZORPAY_KEY_SECRET);
-
-  if (!keyId || !keySecret) {
-    throw new Error("Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET as Worker secrets.");
-  }
-
-  const auth = btoa(`${keyId}:${keySecret}`);
-
-  const response = await fetch("https://api.razorpay.com/v1/orders", {
-    method: "POST",
-    headers: {
-      "Authorization": `Basic ${auth}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      amount: Math.round(amount * 100),
-      currency: "INR",
-      receipt: receipt
-    })
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || !data.id) {
-    console.error("Razorpay order creation failed", data);
-    throw new Error(data?.error?.description || "Unable to create Razorpay order.");
-  }
-
-  return data;
-}
-
-/* ================= ADMIN LOGIN ================= */
-
-function adminLogin(error = "") {
-  const errorHtml = error
-    ? '<div class="error">' + esc(error) + "</div>"
-    : "";
-
-  return `<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CikNotebooks Admin</title>
-<style>
-body{
-  margin:0;
-  background:#f4f6f8;
-  font-family:Arial;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:100vh;
-}
-.box{
-  background:#fff;
-  width:90%;
-  max-width:420px;
-  padding:35px;
-  border-radius:18px;
-  box-shadow:0 15px 45px #0002;
-}
-h1{
-  text-align:center;
-  margin:0;
-  color:#102a56;
-}
-p{
-  text-align:center;
-  color:#777;
-}
-label{
-  display:block;
-  font-weight:bold;
-  margin:15px 0 7px;
-}
-input{
-  width:100%;
-  padding:13px;
-  border:1px solid #ddd;
-  border-radius:9px;
-  box-sizing:border-box;
-}
-button{
-  width:100%;
-  padding:13px;
-  margin-top:18px;
-  border:0;
-  border-radius:9px;
-  background:#102a56;
-  color:#fff;
-  font-weight:bold;
-  cursor:pointer;
-}
-.error{
-  background:#fee2e2;
-  color:#991b1b;
-  padding:12px;
-  border-radius:9px;
-}
-</style>
-</head>
-<body>
-<div class="box">
-<h1>CikNotebooks</h1>
-<p>Admin Dashboard</p>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-${errorHtml}
+<title>CikNotebooks | Every Notebook Can Teach Something</title>
 
-<form method="POST" action="/admin/login">
-<label>Admin Key</label>
-<input type="password" name="admin_key" required autofocus>
-<button>Login</button>
-</form>
-
-</div>
-</body>
-</html>`;
-}
-
-/* ================= SCHOOL LOGIN ================= */
-
-function portalLogin(error = "", rid = "") {
-  const errorHtml = error
-    ? '<div class="error">' + esc(error) + "</div>"
-    : "";
-
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CikNotebooks School Portal</title>
-<style>
-body{
-  margin:0;
-  background:#f5f7fb;
-  font-family:Arial;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.box{
-  background:#fff;
-  width:90%;
-  max-width:450px;
-  padding:35px;
-  border-radius:18px;
-  box-shadow:0 15px 45px #0002;
-}
-h1{
-  text-align:center;
-  color:#102a56;
-}
-p{
-  text-align:center;
-  color:#666;
-  line-height:1.5;
-}
-label{
-  display:block;
-  font-weight:bold;
-  margin:15px 0 7px;
-}
-input{
-  width:100%;
-  padding:13px;
-  border:1px solid #ddd;
-  border-radius:9px;
-  box-sizing:border-box;
-}
-button{
-  width:100%;
-  padding:14px;
-  margin-top:20px;
-  border:0;
-  border-radius:9px;
-  background:#102a56;
-  color:#fff;
-  font-weight:bold;
-}
-.error{
-  background:#fee2e2;
-  color:#991b1b;
-  padding:12px;
-  border-radius:9px;
-}
-</style>
-</head>
-<body>
-<div class="box">
-<h1>CikNotebooks</h1>
-
-<p>
-<b>School Portal</b><br>
-Login using Requirement ID and registered phone number.
-</p>
-
-${errorHtml}
-
-<form method="POST" action="/portal/login">
-
-<label>Requirement ID</label>
-<input
-  name="requirement_id"
-  value="${esc(rid)}"
-  placeholder="CIK-2026-00001"
-  required
->
-
-<label>Registered Phone Number</label>
-<input
-  name="phone"
-  type="tel"
-  placeholder="10-digit mobile number"
-  required
->
-
-<button>Open School Portal</button>
-
-</form>
-</div>
-</body>
-</html>`;
-}
-
-/* ================= JOURNEY ================= */
-
-function journey(status) {
-  const steps = [
-    ["Requirement", "New Requirement"],
-    ["Quotation", "Quotation Sent"],
-    ["Approval", "Quotation Approved"],
-    ["Payment", "Payment Received"],
-    ["PO", "PO Received"],
-    ["Design", "Design Approval"],
-    ["Production", "Production Started"],
-    ["Dispatch", "Ready for Dispatch"],
-    ["Delivered", "Delivered"],
-    ["Renewal", "Renewal Due"]
-  ];
-
-  return steps.map(([name, value]) => {
-    const active =
-      status === value ||
-      (
-        value === "Quotation Sent" &&
-        status === "Quotation Changes Requested"
-      );
-
-    return (
-      '<div class="step ' +
-      (active ? "active" : "") +
-      '">' +
-      "<b>" +
-      esc(name) +
-      "</b>" +
-      (active
-        ? "<small>" + esc(status) + "</small>"
-        : "") +
-      "</div>"
-    );
-  }).join("");
-}
-
-/* ================= SCHOOL PORTAL ================= */
-
-function portalPage(row) {
-  const c = calculation(row);
-
-  const qno =
-    row.quotation_number ||
-    quoteNo(row.id);
-
-  const canRespond = [
-    "Quotation Sent",
-    "Quotation Changes Requested"
-  ].includes(row.status);
-
-  const hasQuote =
-    row.quotation_number ||
-    row.quotation_amount ||
-    row.status !== "New Requirement";
-
-  const changeRequestHtml = row.school_change_request
-    ? '<div class="notice"><b>Your change request:</b><br>' +
-      esc(row.school_change_request) +
-      "</div>"
-    : "";
-
-  const approvalHtml = row.status === "Quotation Approved"
-    ? '<div class="success">Quotation approved successfully.</div>'
-    : "";
-
-  let quotationHtml = "";
-
-  let paymentHtml = "";
-
-  if (row.payment_status === "Paid") {
-    paymentHtml = `
-      <div class="success payment-box">
-        <b>Payment Received ✓</b><br>
-        Amount Paid: ₹${Number(row.payment_amount || c.total).toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2})}<br>
-        Payment ID: ${esc(row.razorpay_payment_id || "")}
-      </div>`;
-  } else if (row.status === "Quotation Approved" && c.total > 0) {
-    paymentHtml = `
-      <div class="payment-box">
-        <h3>Payment</h3>
-        <p>Your quotation is approved. You can now make the full payment securely through Razorpay.</p>
-        <div class="pay-total">Total Payable: ₹${c.total.toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
-        <button id="payNowBtn" class="pay-now" onclick="startPayment()">Pay Now</button>
-        <div id="paymentMessage" class="payment-message"></div>
-      </div>`;
-  }
-
-  if (hasQuote) {
-    quotationHtml =
-      '<table>' +
-
-      "<tr>" +
-      "<td>Quotation Number</td>" +
-      "<td>" + esc(qno) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Quantity</td>" +
-      "<td>" + esc(row.quantity) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Notebook Amount</td>" +
-      "<td>₹" + c.notebooks.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Custom Cover</td>" +
-      "<td>₹" + c.cover.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Custom Content</td>" +
-      "<td>₹" + c.content.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Subtotal</td>" +
-      "<td>₹" + c.subtotal.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>GST (" + c.gst + "%)</td>" +
-      "<td>₹" + c.gstAmount.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      '<tr class="total">' +
-      "<td>Total</td>" +
-      "<td>₹" + c.total.toFixed(2) + "</td>" +
-      "</tr>" +
-
-      "<tr>" +
-      "<td>Valid Until</td>" +
-      "<td>" + esc(validUntil(row)) + "</td>" +
-      "</tr>" +
-
-      "</table>" +
-
-      '<div class="actions">' +
-      '<a class="btn quote" href="/api/portal/quotation" target="_blank">' +
-      "View / Print Quotation" +
-      "</a>" +
-      "</div>";
-
-    if (canRespond) {
-      quotationHtml +=
-        '<div class="actions" style="margin-top:15px">' +
-
-        '<form method="POST" action="/api/portal/approve">' +
-
-        '<input type="hidden" name="requirement_id" value="' +
-        esc(row.requirement_id) +
-        '">' +
-
-        '<button class="approve">Approve Quotation</button>' +
-
-        "</form>" +
-
-        '<button class="change" onclick="document.getElementById(\'changeBox\').style.display=\'block\'">' +
-        "Request Changes" +
-        "</button>" +
-
-        "</div>" +
-
-        '<div id="changeBox" style="display:none;margin-top:15px">' +
-
-        '<form method="POST" action="/api/portal/request-changes">' +
-
-        '<input type="hidden" name="requirement_id" value="' +
-        esc(row.requirement_id) +
-        '">' +
-
-        '<textarea name="message" placeholder="Tell us what you would like to change..." required></textarea>' +
-
-        '<button class="change">Send Change Request</button>' +
-
-        "</form>" +
-
-        "</div>";
-    }
-  } else {
-    quotationHtml =
-      '<p class="notice">' +
-      "Your quotation is being prepared by CikNotebooks." +
-      "</p>";
-  }
-
-  const paymentScript = `
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script>
-async function startPayment(){
-  const button = document.getElementById("payNowBtn");
-  const message = document.getElementById("paymentMessage");
-  if(button) button.disabled = true;
-  if(message) message.textContent = "Preparing secure payment...";
-
-  try {
-    const response = await fetch("/api/portal/create-payment-order", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requirement_id: ${JSON.stringify(row.requirement_id)} })
-    });
-
-    const data = await response.json();
-    if(!response.ok || !data.success){
-      throw new Error(data.error || "Unable to start payment.");
-    }
-
-    const options = {
-      key: data.key_id,
-      amount: data.amount,
-      currency: data.currency,
-      name: "CikNotebooks",
-      description: "School Quotation Payment - ${esc(row.requirement_id)}",
-      order_id: data.order_id,
-      prefill: {
-        name: ${JSON.stringify(row.contact_person || row.school_name)},
-        email: ${JSON.stringify(row.email || "")},
-        contact: ${JSON.stringify(row.phone || "")}
-      },
-      notes: {
-        requirement_id: ${JSON.stringify(row.requirement_id)}
-      },
-      theme: { color: "#102a56" },
-      handler: async function(payment){
-        if(message) message.textContent = "Verifying payment...";
-        const verify = await fetch("/api/portal/verify-payment", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requirement_id: ${JSON.stringify(row.requirement_id)},
-            razorpay_order_id: payment.razorpay_order_id,
-            razorpay_payment_id: payment.razorpay_payment_id,
-            razorpay_signature: payment.razorpay_signature
-          })
-        });
-        const result = await verify.json();
-        if(!verify.ok || !result.success){
-          throw new Error(result.error || "Payment verification failed.");
-        }
-        window.location.href = "/portal";
-      },
-      modal: {
-        ondismiss: function(){
-          if(button) button.disabled = false;
-          if(message) message.textContent = "Payment window closed. You can try again.";
-        }
-      }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.on("payment.failed", function(response){
-      if(button) button.disabled = false;
-      if(message) message.textContent = response?.error?.description || "Payment failed. Please try again.";
-    });
-    rzp.open();
-  } catch(error) {
-    if(button) button.disabled = false;
-    if(message) message.textContent = error.message || "Unable to start payment.";
-  }
-}
-</script>`;
-
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CikNotebooks School Portal</title>
+<meta name="description" content="CikNotebooks combines school subjects, real-world knowledge and future skills in everyday notebooks. Learn, Think, Solve, Create, Grow.">
 
 <style>
-body{
-  margin:0;
-  background:#f5f7fb;
-  font-family:Arial;
-  color:#111827;
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:Arial,Helvetica,sans-serif;color:#172033;background:#fff;line-height:1.6}
+a{text-decoration:none;color:inherit}
+img{max-width:100%;display:block}
+.container{width:min(1180px,92%);margin:auto}
+
+header{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.96);border-bottom:1px solid #e8ebf2;backdrop-filter:blur(10px)}
+.nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:25px}
+.logo{font-size:26px;font-weight:800;color:#102a56}
+.logo span{color:#f5b400}
+.nav-links{display:flex;gap:24px;align-items:center;list-style:none;font-size:14px;font-weight:600}
+.nav-links a:hover{color:#f0a900}
+.nav-btn{background:#102a56;color:#fff!important;padding:11px 17px;border-radius:8px}.nav-portal{background:#fff;color:#102a56!important;border:1px solid #cfd7e6;padding:10px 15px;border-radius:8px}.nav-portal:hover{background:#f5f8fd}.mobile-menu-btn{display:none;width:44px;height:42px;padding:0;background:#fff;color:#102a56;border:1px solid #dce2ec;border-radius:8px;font-size:22px}.mobile-menu{display:none;background:#fff;border-top:1px solid #e8ebf2}.mobile-menu a{display:block;padding:13px 4%;border-bottom:1px solid #edf0f5;font-weight:700;font-size:14px}.mobile-menu.active{display:block}
+
+.hero{background:radial-gradient(circle at 85% 20%,rgba(245,180,0,.18),transparent 28%),linear-gradient(135deg,#f7faff 0%,#eef4ff 100%);padding:100px 0 90px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;align-items:center;gap:60px}
+.eyebrow{color:#e29a00;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:18px}
+h1{font-size:clamp(42px,6vw,72px);line-height:1.04;color:#102a56;margin-bottom:24px}
+.hero p{font-size:20px;max-width:680px;color:#4d5870;margin-bottom:30px}
+.tagline{font-weight:800;color:#102a56;font-size:18px;margin-bottom:30px}
+.buttons{display:flex;gap:14px;flex-wrap:wrap}
+.btn{display:inline-block;padding:14px 22px;border-radius:9px;font-weight:700;border:1px solid #102a56}
+.btn-primary{background:#102a56;color:#fff}
+.btn-secondary{background:#fff;color:#102a56}
+
+.hero-visual{min-height:450px;position:relative;display:flex;align-items:center;justify-content:center}
+.notebook{width:290px;height:390px;border-radius:12px;background:linear-gradient(145deg,#122f61,#1e4b91);box-shadow:0 30px 60px rgba(16,42,86,.25);transform:rotate(5deg);padding:35px 25px;color:#fff;position:relative}
+.notebook:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.25);border-radius:8px}
+.notebook h3{position:relative;font-size:30px;margin-top:65px}
+.notebook p{position:relative;color:#fff;font-size:14px;margin-top:14px}
+.floating-card{position:absolute;background:#fff;padding:18px;border-radius:12px;box-shadow:0 15px 35px rgba(0,0,0,.12);font-weight:700;color:#102a56}
+.fc1{top:45px;right:0}.fc2{bottom:45px;left:0}
+
+section{padding:90px 0}
+.section-head{max-width:760px;margin-bottom:50px}
+.section-head h2{font-size:clamp(32px,4vw,48px);line-height:1.1;color:#102a56;margin-bottom:16px}
+.section-head p{color:#626c80;font-size:17px}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{border:1px solid #e5e9f0;border-radius:14px;padding:28px;background:#fff;transition:.25s}
+.card:hover{transform:translateY(-5px);box-shadow:0 15px 35px rgba(16,42,86,.09)}
+.icon{width:48px;height:48px;border-radius:12px;background:#fff3cf;display:flex;align-items:center;justify-content:center;font-size:23px;margin-bottom:18px}
+.card h3{color:#102a56;margin-bottom:10px;font-size:20px}
+.card p{color:#687287;font-size:15px}
+
+.philosophy,.school{background:#f6f8fc}
+.framework{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.framework-card{padding:24px 12px;text-align:center;border-radius:12px;background:#fff;border:1px solid #e4e8ef}
+.framework-card strong{display:block;color:#102a56;margin-bottom:7px}
+.framework-card small{color:#687287}
+
+.segments{background:#102a56;color:#fff}
+.segments .section-head h2,.segments .section-head p{color:#fff}
+.segment-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.segment{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:26px}
+.segment-number{font-size:14px;color:#ffd25b;font-weight:800}
+.segment h3{margin:12px 0 8px;font-size:23px}
+.segment p{color:#d8e0ee;font-size:14px}
+
+.topic-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.topic{border:1px solid #e5e9f0;border-radius:12px;padding:20px;background:#fff}
+.topic strong{color:#102a56}
+.topic span{display:block;color:#707a8c;margin-top:6px;font-size:14px}
+
+.school-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+.school-list{list-style:none;margin-top:25px}
+.school-list li{margin:13px 0;padding-left:27px;position:relative}
+.school-list li:before{content:"✓";position:absolute;left:0;color:#e5a500;font-weight:bold}
+.school-panel{background:#fff;padding:35px;border-radius:16px;border:1px solid #e4e8ef;box-shadow:0 20px 40px rgba(16,42,86,.08)}
+
+.impact{background:#fffaf0}
+.impact-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:15px}
+.impact-item{padding:22px;background:#fff;border:1px solid #eee4cc;border-radius:12px}
+.impact-item strong{display:block;color:#102a56;margin-bottom:9px}
+.impact-item p{font-size:14px;color:#687287}
+
+/* =====================================================
+   B2B SCHOOL REQUIREMENT SYSTEM
+   ===================================================== */
+.school-request{background:linear-gradient(135deg,#f7faff 0%,#eef4ff 100%)}
+.request-intro{max-width:800px;margin-bottom:35px}
+.request-badge{display:inline-block;background:#fff3cf;color:#8a6200;border:1px solid #f1d98c;padding:7px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-bottom:15px}
+.requirement-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:start}
+.requirement-form{background:#fff;padding:32px;border-radius:16px;border:1px solid #e0e6f0;box-shadow:0 18px 45px rgba(16,42,86,.08)}
+.requirement-form h3{color:#102a56;font-size:25px;margin-bottom:8px}
+.form-note{color:#687287;font-size:13px;margin-bottom:22px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{margin-bottom:13px}
+.form-group label{display:block;font-size:13px;font-weight:700;color:#263248;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{margin-bottom:0}
+.form-group.full{grid-column:1/-1}
+.segment-selection-box{margin:4px 0 18px;padding:18px;border:1px solid #dfe5ef;border-radius:12px;background:#f8faff}
+.segment-selection-title{display:block;font-size:14px;font-weight:800;color:#102a56;margin-bottom:4px}
+.segment-selection-note{font-size:12px;color:#687287;margin-bottom:14px}
+.segment-quantity-row{display:grid;grid-template-columns:1fr 150px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #e7ebf2}
+.segment-quantity-row:last-of-type{border-bottom:none}
+.segment-quantity-row label{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;color:#263248;cursor:pointer}
+.segment-quantity-row label input{width:auto;margin:0}
+.segment-qty{width:100%;margin:0!important;padding:10px!important}
+.segment-qty:disabled{background:#edf1f6;color:#9aa3b2;cursor:not-allowed}
+.segment-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:13px 14px;border-radius:9px;background:#102a56;color:#fff}
+.segment-total-row strong:last-child{font-size:20px;color:#ffd25b}
+.requirement-form textarea{min-height:120px}
+.checkbox-row{display:flex;align-items:flex-start;gap:9px;margin:10px 0 18px;color:#5f6b80;font-size:13px}
+.checkbox-row input{width:auto;margin-top:4px}
+.requirement-submit{background:#102a56;color:#fff}
+.requirement-submit:hover{background:#173d76}
+.requirement-aside{display:grid;gap:16px}
+.process-card{background:#fff;border:1px solid #e1e7f0;border-radius:15px;padding:24px;box-shadow:0 12px 30px rgba(16,42,86,.06)}
+.process-card h3{color:#102a56;margin-bottom:15px;font-size:21px}
+.process-step{display:flex;gap:12px;margin:14px 0}
+.process-number{width:30px;height:30px;border-radius:50%;background:#fff3cf;color:#8a6200;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0}
+.process-step strong{display:block;color:#263248;font-size:14px}
+.process-step span{display:block;color:#707a8c;font-size:12px;margin-top:2px}
+.trust-card{background:#102a56;color:#fff;border-radius:15px;padding:24px}
+.trust-card h3{margin-bottom:10px}
+.trust-card p{color:#dce5f3;font-size:14px}
+.request-success{display:none;margin-top:20px;background:#f0fff5;border:1px solid #b9e8ca;border-radius:14px;padding:22px}
+.request-success.active{display:block}.request-error{display:none;margin-top:14px;background:#fff1f1;border:1px solid #f0b7b7;color:#9b1c1c;border-radius:10px;padding:12px;font-size:13px}.request-error.active{display:block}.success-portal{background:#102a56;color:#fff}.copy-id{background:#fff;color:#102a56;border:1px solid #102a56}.success-next{margin-top:14px;color:#526176;font-size:13px;line-height:1.6}.requirement-submit:disabled{opacity:.65;cursor:wait}
+.success-id{font-size:26px;font-weight:800;color:#102a56;margin:7px 0 10px;letter-spacing:.5px}
+.success-warning{font-size:12px;color:#667085;margin-bottom:16px}
+.success-actions{display:flex;gap:10px;flex-wrap:wrap}
+.success-actions a{display:inline-block;padding:11px 15px;border-radius:8px;font-size:13px;font-weight:800}
+.whatsapp-success{background:#25d366;color:#fff}
+.new-request{background:#fff;color:#102a56;border:1px solid #102a56}
+.requirement-summary{background:#fff;margin-top:14px;padding:14px;border-radius:10px;border:1px solid #dce6df;color:#536075;font-size:13px;white-space:pre-line}
+
+.contact{background:#102a56;color:#fff}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:55px}
+.contact h2{font-size:45px;margin-bottom:18px}
+.contact p{color:#dbe3f0}
+.contact-details{margin-top:28px;display:grid;gap:12px}
+.contact-details a{color:#fff}
+.contact-details a:hover{color:#ffd25b}
+
+form{background:#fff;padding:30px;border-radius:14px}
+input,select,textarea{width:100%;padding:13px;margin-bottom:13px;border:1px solid #d9dee8;border-radius:7px;font-family:inherit;font-size:14px}
+textarea{min-height:120px;resize:vertical}
+button{border:none;cursor:pointer;width:100%;padding:14px;border-radius:8px;background:#f0ae00;color:#102a56;font-weight:800;font-size:15px}
+
+footer{background:#091b38;color:#fff;padding:45px 0 25px}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:40px;margin-bottom:35px}
+footer h3{margin-bottom:14px}
+footer p,footer li{color:#bfc9da;font-size:14px}
+footer ul{list-style:none}
+footer li{margin:8px 0}
+footer a:hover{color:#ffd25b}
+.copyright{border-top:1px solid rgba(255,255,255,.12);padding-top:20px;text-align:center;color:#aeb9cc;font-size:13px}
+
+.whatsapp{position:fixed;right:22px;bottom:22px;z-index:1999;background:#25d366;color:#fff;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:25px;box-shadow:0 8px 25px rgba(0,0,0,.2)}
+
+/* =====================================================
+   CIKNOTEBOOKS AI ASSISTANT
+   ===================================================== */
+.cik-ai-button{position:fixed;right:22px;bottom:92px;z-index:2000;border:none;cursor:pointer;background:#102a56;color:#fff;padding:13px 18px;border-radius:30px;font-weight:800;font-size:14px;box-shadow:0 10px 30px rgba(16,42,86,.28);display:flex;align-items:center;gap:8px;transition:.25s;width:auto}
+.cik-ai-button:hover{transform:translateY(-3px);box-shadow:0 14px 35px rgba(16,42,86,.35)}
+.cik-ai-chat{position:fixed;right:22px;bottom:158px;width:370px;max-width:calc(100vw - 30px);height:540px;max-height:calc(100vh - 190px);background:#fff;border-radius:18px;z-index:2001;box-shadow:0 25px 70px rgba(0,0,0,.22);border:1px solid #e5e9f0;display:none;flex-direction:column;overflow:hidden}
+.cik-ai-chat.active{display:flex}
+.cik-ai-header{background:#102a56;color:#fff;padding:17px 18px;display:flex;align-items:center;justify-content:space-between}
+.cik-ai-title{display:flex;align-items:center;gap:10px}
+.cik-ai-avatar{width:38px;height:38px;border-radius:50%;background:#f5b400;display:flex;align-items:center;justify-content:center;font-size:20px}
+.cik-ai-title strong{display:block;font-size:15px}
+.cik-ai-title small{display:block;color:#dce5f3;font-size:11px;margin-top:2px}
+.cik-ai-close{background:transparent;color:#fff;border:none;width:auto;padding:5px;font-size:22px;cursor:pointer}
+.cik-ai-messages{flex:1;overflow-y:auto;padding:17px;background:#f7f9fc}
+.cik-ai-message{max-width:86%;padding:11px 13px;border-radius:13px;margin-bottom:10px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.cik-ai-bot{background:#fff;color:#263248;border:1px solid #e4e8ef;margin-right:auto}
+.cik-ai-user{background:#102a56;color:#fff;margin-left:auto}
+.cik-ai-input-area{padding:12px;border-top:1px solid #e5e9f0;background:#fff;display:flex;gap:8px}
+.cik-ai-input{flex:1;border:1px solid #d8deea;border-radius:22px;padding:11px 14px;margin:0;outline:none;font-size:14px}
+.cik-ai-input:focus{border-color:#102a56}
+.cik-ai-send{width:44px;height:44px;padding:0;border-radius:50%;background:#f0ae00;color:#102a56;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cik-ai-suggestion{border:1px solid #dce2ec;background:#fff;color:#102a56;border-radius:20px;padding:7px 10px;font-size:11px;cursor:pointer;width:auto;margin:3px}
+.cik-ai-suggestion:hover{background:#f2f5fa}
+
+@media(max-width:900px){
+.nav-links{display:none}.mobile-menu-btn{display:block}
+.hero-grid,.school-grid,.contact-grid,.requirement-grid{grid-template-columns:1fr}
+.cards{grid-template-columns:1fr 1fr}
+.segment-grid{grid-template-columns:1fr 1fr}
+.topic-grid{grid-template-columns:1fr 1fr}
+.framework{grid-template-columns:repeat(3,1fr)}
+.impact-grid{grid-template-columns:1fr 1fr}
+.footer-grid{grid-template-columns:1fr 1fr}
 }
-header{
-  background:#102a56;
-  color:white;
-  padding:18px 25px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.logout{
-  background:white;
-  color:#102a56;
-  border:0;
-  padding:9px 15px;
-  border-radius:8px;
-  font-weight:bold;
-}
-main{
-  max-width:1050px;
-  margin:25px auto;
-  padding:0 18px;
-}
-.card{
-  background:white;
-  border-radius:16px;
-  padding:22px;
-  margin-bottom:18px;
-  box-shadow:0 5px 25px #0000000c;
-}
-h1{
-  margin-top:0;
-}
-.badge{
-  display:inline-block;
-  background:#e5efff;
-  color:#102a56;
-  padding:8px 13px;
-  border-radius:20px;
-  font-weight:bold;
-}
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
-}
-.info{
-  background:#f8fafc;
-  padding:12px;
-  border-radius:9px;
-}
-.info small{
-  display:block;
-  color:#777;
-  margin-bottom:4px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-td,th{
-  padding:11px;
-  border-bottom:1px solid #eee;
-  text-align:left;
-}
-td:last-child,
-th:last-child{
-  text-align:right;
-}
-.total{
-  font-size:19px;
-  font-weight:bold;
-}
-.steps{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-}
-.step{
-  padding:14px;
-  background:#f8fafc;
-  border-radius:10px;
-  border:1px solid #eee;
-}
-.step.active{
-  background:#eef4ff;
-  border-color:#102a56;
-  color:#102a56;
-}
-.step small{
-  display:block;
-  margin-top:6px;
-}
-.actions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-button,.btn{
-  padding:12px 16px;
-  border:0;
-  border-radius:9px;
-  font-weight:bold;
-  cursor:pointer;
-  text-decoration:none;
-}
-.approve{
-  background:#166534;
-  color:white;
-}
-.change{
-  background:#fff7ed;
-  color:#9a3412;
-}
-.quote{
-  background:#102a56;
-  color:white;
-}
-textarea{
-  width:100%;
-  min-height:110px;
-  box-sizing:border-box;
-  padding:12px;
-  border:1px solid #ddd;
-  border-radius:9px;
-}
-.notice{
-  padding:12px;
-  border-radius:9px;
-  background:#fff7ed;
-  color:#9a3412;
-}
-.success{
-  padding:12px;
-  border-radius:9px;
-  background:#ecfdf5;
-  color:#166534;
-}
-@media(max-width:700px){
-  .grid,
-  .steps{
-    grid-template-columns:1fr;
-  }
+
+@media(max-width:600px){
+.segment-quantity-row{grid-template-columns:1fr 110px}
+section{padding:65px 0}
+.hero{padding:70px 0}
+h1{font-size:43px}
+.hero p{font-size:17px}
+.hero-visual{min-height:390px}
+.notebook{width:245px;height:330px}
+.cards,.segment-grid,.topic-grid,.framework,.impact-grid,.footer-grid{grid-template-columns:1fr}
+.contact h2{font-size:35px}
+.form-row{grid-template-columns:1fr}
+.requirement-form{padding:22px}
+.cik-ai-button{right:15px;bottom:84px;font-size:13px;padding:12px 15px}
+.cik-ai-chat{right:10px;bottom:145px;width:calc(100vw - 20px);height:500px}
 }
 </style>
 </head>
@@ -1075,3380 +217,882 @@ textarea{
 <body>
 
 <header>
-<div>
-<strong>CikNotebooks</strong><br>
-<small>Learn Think Solve Create Grow</small>
+<div class="container nav">
+<a href="#" class="logo">Cik<span>Notebooks</span></a>
+<ul class="nav-links">
+<li><a href="#about">About</a></li>
+<li><a href="#segments">Segments</a></li>
+<li><a href="#topics">Topics</a></li>
+<li><a href="#schools">For Schools</a></li>
+<li><a href="#school-request">Request Quote</a></li>
+<li><a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank" class="nav-portal">School Portal</a></li>
+<li><a href="#contact" class="nav-btn">Request Demo</a></li>
+</ul>
+<button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu" aria-expanded="false">☰</button>
 </div>
-
-<form method="POST" action="/portal/logout">
-<button class="logout">Logout</button>
-</form>
+<div class="mobile-menu" id="mobileMenu">
+<a href="#about">About</a><a href="#segments">Segments</a><a href="#topics">Topics</a><a href="#schools">For Schools</a><a href="#school-request">Request Quote</a><a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank">School Portal</a><a href="#contact">Request Demo</a>
+</div>
 </header>
 
-<main>
-
-<div class="card">
-
-<h1>${esc(row.school_name)}</h1>
-
+<section class="hero">
+<div class="container hero-grid">
 <div>
-Requirement ID:
-<b>${esc(row.requirement_id)}</b>
+<div class="eyebrow">Content-Infused Knowledge Notebooks</div>
+<h1>Every Notebook Can Teach Something.</h1>
+<p>CikNotebooks combines school subjects, real-world knowledge and future skills inside everyday notebooks — creating awareness, curiosity and a habit of thinking beyond textbooks.</p>
+<div class="tagline">Learn • Think • Solve • Create • Grow</div>
+<div class="buttons">
+<a href="#school-request" class="btn btn-primary">Request a Quote for Your School</a>
+<a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank" class="btn btn-secondary">Open School Portal</a>
+<a href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank" class="btn btn-secondary">Talk on WhatsApp</a>
+</div>
+<p style="margin-top:18px;font-size:13px;color:#687287;">Already submitted a requirement? <a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank" style="color:#102a56;font-weight:800;">Open School Portal →</a></p>
 </div>
 
-<p>
-<span class="badge">${esc(row.status)}</span>
-</p>
-
-${changeRequestHtml}
-
-${approvalHtml}
-
+<div class="hero-visual">
+<div class="notebook">
+<div style="position:relative;font-size:13px;font-weight:bold;">CikNotebooks</div>
+<h3>Learn Beyond<br>The Page.</h3>
+<p>School Subject + Real-World Knowledge + Future Skills</p>
+<p style="margin-top:35px;font-weight:bold;">Learn Think Solve Create Grow</p>
 </div>
-
-<div class="card">
-
-<h2>Order Journey</h2>
-
-<div class="steps">
-${journey(row.status)}
+<div class="floating-card fc1">💡 Think</div>
+<div class="floating-card fc2">🚀 Create</div>
 </div>
-
 </div>
+</section>
 
-<div class="grid">
-
-<div class="card">
-
-<h2>Requirement Details</h2>
-
-<div class="info">
-<small>Contact Person</small>
-${esc(row.contact_person)}
+<section id="about">
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Why CikNotebooks?</div>
+<h2>Turning everyday notebook pages into learning opportunities.</h2>
+<p>Traditional notebooks are mostly blank pages used for writing. CikNotebooks adds another layer — curated knowledge, questions, examples, activities and future-oriented ideas.</p>
 </div>
-
-<br>
-
-<div class="info">
-<small>City</small>
-${esc(row.city)}
+<div class="cards">
+<div class="card"><div class="icon">💡</div><h3>Content-Infused Knowledge</h3><p>Students encounter useful knowledge while using the notebook they already carry to school every day.</p></div>
+<div class="card"><div class="icon">🔎</div><h3>Awareness & Curiosity</h3><p>CikNotebooks encourages students to notice, question, explore and understand the world around them.</p></div>
+<div class="card"><div class="icon">🚀</div><h3>Future-Ready Learning</h3><p>AI, technology, entrepreneurship, financial literacy, innovation, life skills and more are introduced progressively.</p></div>
 </div>
-
-<br>
-
-<div class="info">
-<small>Segments & Required Quantity</small>
-<table style="width:100%;margin-top:8px;border-collapse:collapse">
-<thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid #ddd">Segment</th><th style="text-align:right;padding:8px;border-bottom:1px solid #ddd">Quantity</th></tr></thead>
-<tbody>
-${segmentRowsHtml(row)}
-<tr><th style="text-align:left;padding:8px;border-top:2px solid #ddd">Total</th><th style="text-align:right;padding:8px;border-top:2px solid #ddd">${esc(c.quantity)}</th></tr>
-</tbody>
-</table>
+<div class="card" style="margin-top:22px;max-width:520px">
+<div class="icon">👤</div>
+<h3>Founded by Abhishek Kumar</h3>
+<p>CikNotebooks is being built as an education innovation initiative where an everyday notebook becomes an additional learning interface.</p>
 </div>
-
-<br>
-
-<div class="info">
-<small>Students</small>
-${esc(row.students || 0)}
 </div>
+</section>
 
+<section class="philosophy">
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Learning Philosophy</div>
+<h2>Knowledge should lead to thinking and action.</h2>
+<p>CikNotebooks is designed around curiosity, critical thinking, hands-on exploration, problem solving, creativity and real-world application.</p>
 </div>
-
-<div class="card">
-
-<h2>Quotation</h2>
-
-${quotationHtml}
-
-${paymentHtml}
-
+<div class="framework">
+<div class="framework-card"><strong>KNOW</strong><small>World & future knowledge</small></div>
+<div class="framework-card"><strong>THINK</strong><small>Questions & decisions</small></div>
+<div class="framework-card"><strong>SOLVE</strong><small>Real-world problems</small></div>
+<div class="framework-card"><strong>CREATE</strong><small>Projects & challenges</small></div>
+<div class="framework-card"><strong>EXPLORE</strong><small>Careers & opportunities</small></div>
+<div class="framework-card"><strong>REFLECT</strong><small>Personal growth</small></div>
 </div>
-
 </div>
+</section>
 
-</main>
+<section id="segments" class="segments">
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Age-Wise Learning</div>
+<h2>Four segments. One progressive learning journey.</h2>
+<p>Content complexity increases with age, while unnecessary repetition is avoided.</p>
+</div>
+<div class="segment-grid">
+<div class="segment"><div class="segment-number">SEGMENT 01</div><h3>Classes 1–3</h3><p>Ages 6–8. Curiosity, observation, imagination, simple real-world awareness and healthy habits.</p></div>
+<div class="segment"><div class="segment-number">SEGMENT 02</div><h3>Classes 4–6</h3><p>Ages 9–11. Awareness, simple logic, digital literacy, money basics, communication and exploration.</p></div>
+<div class="segment"><div class="segment-number">SEGMENT 03</div><h3>Classes 7–9</h3><p>Ages 12–14. Analysis, decision-making, AI, finance, entrepreneurship, cybersecurity and real-world problems.</p></div>
+<div class="segment"><div class="segment-number">SEGMENT 04</div><h3>Classes 10–12</h3><p>Ages 15–17. Strategy, advanced technology, careers, personal finance, startups and future opportunities.</p></div>
+</div>
+</div>
+</section>
 
-${paymentScript}
+<section id="topics">
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Master Topic Architecture</div>
+<h2>Learning beyond the conventional syllabus.</h2>
+<p>CikNotebooks progressively explores knowledge areas that help students understand themselves, society, technology and the future.</p>
+</div>
+<div class="topic-grid">
+<div class="topic"><strong>01. Mindset & Personal Growth</strong><span>Curiosity → Growth mindset → Resilience → Self-mastery</span></div>
+<div class="topic"><strong>02. Critical Thinking & Problem Solving</strong><span>Observe → Logic → Analysis → Strategic thinking</span></div>
+<div class="topic"><strong>03. Creativity & Innovation</strong><span>Imagine → Ideas → Design thinking → Product creation</span></div>
+<div class="topic"><strong>04. Artificial Intelligence</strong><span>AI awareness → ML & GenAI → Applications & future</span></div>
+<div class="topic"><strong>05. Technology & Digital World</strong><span>Technology → Internet → Cybersecurity → Emerging tech</span></div>
+<div class="topic"><strong>06. Financial Literacy</strong><span>Money → Saving → Investing → Financial planning</span></div>
+<div class="topic"><strong>07. Entrepreneurship</strong><span>Ideas → Problems → Business model → Startups</span></div>
+<div class="topic"><strong>08. Marketing & Sales</strong><span>Communication → Customers → Branding → Strategy</span></div>
+<div class="topic"><strong>09. Career & Future of Work</strong><span>Jobs → Discovery → Skills → Employability</span></div>
+<div class="topic"><strong>10. Communication & Soft Skills</strong><span>Speaking → Storytelling → Collaboration → Leadership</span></div>
+<div class="topic"><strong>11. Health & Human Well-being</strong><span>Healthy habits → Physiology → Well-being → Performance</span></div>
+<div class="topic"><strong>12. Environment & Sustainability</strong><span>Nature → Conservation → Climate → Green economy</span></div>
+<div class="topic"><strong>13. Agriculture & Food System</strong><span>Plants → Farming → Precision agriculture → Agri-tech</span></div>
+<div class="topic"><strong>14. Science & Emerging Technology</strong><span>Science → Applications → Emerging technology → Deep tech</span></div>
+<div class="topic"><strong>15. India & Society</strong><span>My India → Opportunities → Economy → India 2047</span></div>
+<div class="topic"><strong>16. World & Global Awareness</strong><span>World → Cultures → Global economy → Global opportunities</span></div>
+<div class="topic"><strong>17. Business, Economy & Industries</strong><span>Shops → Business → Markets → Economic systems</span></div>
+<div class="topic"><strong>18. Digital & Personal Safety</strong><span>Safe habits → Online safety → Cyber risk → Data privacy</span></div>
+<div class="topic"><strong>19. Society, Ethics & Citizenship</strong><span>Kindness → Rules → Ethics → Responsible decisions</span></div>
+<div class="topic"><strong>20. Real-world Challenges & Projects</strong><span>Observe → Explore → Prototype → Execute</span></div>
+<div class="topic"><strong>21. Emotional Intelligence</strong><span>Emotions → Empathy → Relationships → Leadership</span></div>
+<div class="topic"><strong>22. Banking & Digital Payments</strong><span>Bank basics → UPI → Banking → Financial systems</span></div>
+<div class="topic"><strong>23. Investing & Wealth</strong><span>Saving → Investing → Risk → Wealth building</span></div>
+<div class="topic"><strong>24. Energy & Renewable Energy</strong><span>Energy → Renewables → Storage → Energy transition</span></div>
+<div class="topic"><strong>25. Startup Stories</strong><span>Companies, founders, ideas and startup journeys</span></div>
+<div class="topic"><strong>26. Famous Personalities & Their Work</strong><span>Ideas, journeys, achievements and lessons</span></div>
+<div class="topic"><strong>27. Government, Defence & National Service</strong><span>Government schemes → Public service → National service</span></div>
+<div class="topic"><strong>28. Current Affairs</strong><span>Age-appropriate awareness of important recent events</span></div>
+<div class="topic"><strong>29. New-generation Technology</strong><span>Advanced agriculture → Robotics → Space → EVs</span></div>
+</div>
+</div>
+</section>
 
-</body>
-</html>`;
-}
-
-/* ================= QUOTATION ================= */
-
-function quotationPage(row) {
-  const c = calculation(row);
-
-  const qno =
-    row.quotation_number ||
-    quoteNo(row.id);
-
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>${esc(qno)}</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#eee;
-  margin:0;
-}
-.page{
-  background:white;
-  width:210mm;
-  min-height:297mm;
-  margin:20px auto;
-  padding:18mm;
-  box-sizing:border-box;
-}
-.header{
-  display:flex;
-  justify-content:space-between;
-  border-bottom:2px solid #111;
-  padding-bottom:15px;
-}
-.brand{
-  font-size:28px;
-  font-weight:bold;
-}
-.info{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-top:25px;
-}
-.box{
-  background:#f5f5f5;
-  padding:15px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:25px;
-}
-td,th{
-  border:1px solid #ddd;
-  padding:11px;
-}
-th{
-  background:#f3f4f6;
-  text-align:left;
-}
-.right{
-  text-align:right;
-}
-.total{
-  font-size:19px;
-  font-weight:bold;
-}
-.print{
-  position:fixed;
-  right:20px;
-  top:20px;
-  background:#102a56;
-  color:white;
-  border:0;
-  padding:12px 18px;
-  border-radius:8px;
-}
-.footer{
-  margin-top:35px;
-  font-size:12px;
-  line-height:1.6;
-}
-@media print{
-  body{background:white}
-  .page{margin:0}
-  .print{display:none}
-}
-</style>
-</head>
-
-<body>
-
-<button class="print" onclick="window.print()">
-Print / Save PDF
-</button>
-
-<div class="page">
-
-<div class="header">
-
+<section id="schools" class="school">
+<div class="container school-grid">
 <div>
-<div class="brand">CikNotebooks</div>
-<div>Learn Think Solve Create Grow</div>
+<div class="eyebrow">For Schools</div>
+<h2 style="font-size:45px;color:#102a56;margin-bottom:18px;">A notebook program designed for your school.</h2>
+<p style="color:#667085;">CikNotebooks can be customised according to the requirements, preferences and learning priorities of individual schools.</p>
+<ul class="school-list">
+<li>School name, logo and school-specific cover</li>
+<li>School vision or objectives can be included</li>
+<li>Content topics can be customised</li>
+<li>Age-wise learning segments</li>
+<li>Progressive future-ready content</li>
+<li>School-specific pricing discussions</li>
+</ul>
+</div>
+<div class="school-panel">
+<h3 style="font-size:28px;color:#102a56;margin-bottom:15px;">School Partnership</h3>
+<p style="color:#687287;margin-bottom:20px;">From school-specific notebook covers to customised learning content, CikNotebooks is designed to work with schools, not simply sell notebooks to them.</p>
+<a href="#school-request" class="btn btn-primary">Request for Your School</a>
+</div>
+</div>
+</section>
+
+<section class="school-request" id="school-request">
+<div class="container">
+
+<div class="request-intro">
+<div class="request-badge">FOR SCHOOLS • REQUEST A QUOTE</div>
+<div class="eyebrow">Request a Quote / School Registration</div>
+<h2 style="font-size:clamp(34px,4vw,50px);line-height:1.1;color:#102a56;margin-bottom:16px;">Tell us what your school needs.</h2>
+<p style="color:#626c80;font-size:17px;">Submit your school requirement once. Your Requirement ID becomes the reference for quotation, approval, production planning and future communication.</p>
 </div>
 
-<div>
-<b>QUOTATION</b><br>
-${esc(qno)}<br>
+<div class="requirement-grid">
 
-Date:
-${esc(
-  new Date(
-    row.quotation_date ||
-    row.created_at ||
-    Date.now()
-  ).toLocaleDateString("en-IN")
-)}
+<form class="requirement-form" id="schoolRequirementForm" onsubmit="submitSchoolRequirement(event)">
+<h3>School Requirement Form</h3>
+<p class="form-note">Please provide the details below. Fields marked * are required.</p>
 
-<br>
-
-Valid Until:
-${esc(validUntil(row))}
-
+<div class="form-row">
+<div class="form-group">
+<label for="reqSchoolName">School Name *</label>
+<input id="reqSchoolName" name="school_name" type="text" placeholder="e.g. XYZ Public School" required>
+</div>
+<div class="form-group">
+<label for="reqContact">Contact Person *</label>
+<input id="reqContact" name="contact_person" type="text" placeholder="Principal / Coordinator / Management" required>
+</div>
 </div>
 
+<div class="form-row">
+<div class="form-group">
+<label for="reqDesignation">Designation</label>
+<input id="reqDesignation" name="designation" type="text" placeholder="e.g. Principal">
+</div>
+<div class="form-group">
+<label for="reqPhone">Phone / WhatsApp *</label>
+<input id="reqPhone" name="phone" type="tel" placeholder="+91 XXXXX XXXXX" required>
+</div>
 </div>
 
-<h1 style="text-align:center">
-Quotation
-</h1>
-
-<div class="info">
-
-<div class="box">
-
-<b>School</b><br><br>
-
-${esc(row.school_name)}<br>
-${esc(row.city)}<br>
-${esc(row.contact_person)}<br>
-${esc(row.phone)}<br>
-${esc(row.email)}
-
+<div class="form-row">
+<div class="form-group">
+<label for="reqEmail">Email *</label>
+<input id="reqEmail" name="email" type="email" placeholder="school@example.com" required>
+</div>
+<div class="form-group">
+<label for="reqCity">City *</label>
+<input id="reqCity" name="city" type="text" placeholder="e.g. Ranchi" required>
+</div>
 </div>
 
-<div class="box">
+<div class="segment-selection-box">
+<label class="segment-selection-title">Select Segment(s) & Enter Quantity *</label>
+<p class="segment-selection-note">Choose any segment(s). Enter the notebook quantity required for each selected segment.</p>
 
-<b>Requirement</b><br><br>
-
-Requirement ID:
-${esc(row.requirement_id)}
-<br><br>
-
-Segments & Quantity:
-<table style="width:100%;margin-top:8px;border-collapse:collapse">
-<thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #ddd">Segment</th><th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">Qty</th></tr></thead>
-<tbody>
-${segmentRowsHtml(row)}
-<tr><th style="text-align:left;padding:6px;border-top:2px solid #ddd">Total</th><th style="text-align:right;padding:6px;border-top:2px solid #ddd">${esc(c.quantity)}</th></tr>
-</tbody>
-</table>
-<br>
-
-Students:
-${esc(row.students || 0)}
-
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 1 — Classes 1–3"> <span>Segment 1 — Classes 1–3</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 1 — Classes 1–3" min="1" placeholder="Quantity" disabled>
 </div>
 
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 2 — Classes 4–6"> <span>Segment 2 — Classes 4–6</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 2 — Classes 4–6" min="1" placeholder="Quantity" disabled>
 </div>
 
-<table>
-
-<tr>
-<th>Description</th>
-<th class="right">Amount</th>
-</tr>
-
-${segmentQuotationRowsHtml(row)}
-
-<tr>
-<td>Custom Cover</td>
-<td class="right">
-₹${c.cover.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>Custom Content</td>
-<td class="right">
-₹${c.content.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>Subtotal</td>
-<td class="right">
-₹${c.subtotal.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>GST (${c.gst}%)</td>
-<td class="right">
-₹${c.gstAmount.toFixed(2)}
-</td>
-</tr>
-
-<tr class="total">
-<td>Grand Total</td>
-<td class="right">
-₹${c.total.toFixed(2)}
-</td>
-</tr>
-
-</table>
-
-<div class="footer">
-
-<b>Payment Terms:</b><br>
-${esc(row.payment_terms || "As mutually agreed")}
-<br><br>
-
-<b>Bank / Payment Details:</b><br>
-${esc(row.bank_details || "")}
-<br><br>
-
-<b>Terms & Conditions:</b><br>
-
-1. Quotation validity is as mentioned above.<br>
-2. Final production will follow approved requirements and design.<br>
-3. Delivery schedule will be mutually agreed.<br>
-4. Additional customization may be charged separately.
-
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 3 — Classes 7–9"> <span>Segment 3 — Classes 7–9</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 3 — Classes 7–9" min="1" placeholder="Quantity" disabled>
 </div>
 
+<div class="segment-quantity-row">
+<label><input type="checkbox" class="segment-check" data-segment="Segment 4 — Classes 10–12"> <span>Segment 4 — Classes 10–12</span></label>
+<input type="number" class="segment-qty" data-segment="Segment 4 — Classes 10–12" min="1" placeholder="Quantity" disabled>
 </div>
 
-</body>
-</html>`;
-}
-
-/* ================= INVOICE ================= */
-
-function invoicePage(row) {
-  const c = calculation(row);
-
-  const ino =
-    row.invoice_number ||
-    invoiceNo(row.id);
-
-  const qno =
-    row.quotation_number ||
-    quoteNo(row.id);
-
-  return `<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>${esc(ino)}</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#eee;
-  margin:0;
-}
-.page{
-  background:white;
-  width:210mm;
-  min-height:297mm;
-  margin:20px auto;
-  padding:18mm;
-  box-sizing:border-box;
-}
-.header{
-  display:flex;
-  justify-content:space-between;
-  border-bottom:2px solid #111;
-  padding-bottom:15px;
-}
-.brand{
-  font-size:28px;
-  font-weight:bold;
-}
-.info{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-top:25px;
-}
-.box{
-  background:#f5f5f5;
-  padding:15px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:25px;
-}
-td,th{
-  border:1px solid #ddd;
-  padding:11px;
-}
-th{
-  background:#f3f4f6;
-  text-align:left;
-}
-.right{
-  text-align:right;
-}
-.total{
-  font-size:19px;
-  font-weight:bold;
-}
-.print{
-  position:fixed;
-  right:20px;
-  top:20px;
-  background:#102a56;
-  color:white;
-  border:0;
-  padding:12px 18px;
-  border-radius:8px;
-}
-.footer{
-  margin-top:35px;
-  font-size:12px;
-  line-height:1.6;
-}
-@media print{
-  body{background:white}
-  .page{margin:0}
-  .print{display:none}
-}
-</style>
-</head>
-
-<body>
-
-<button class="print" onclick="window.print()">
-Print / Save PDF
-</button>
-
-<div class="page">
-
-<div class="header">
-
-<div>
-<div class="brand">CikNotebooks</div>
-<div>Learn Think Solve Create Grow</div>
+<div class="segment-total-row">
+<strong>Total Required Quantity</strong>
+<strong id="reqQuantityDisplay">0</strong>
+</div>
+<input type="hidden" id="reqQuantity" name="required_quantity" value="0">
 </div>
 
-<div>
-<b>INVOICE</b><br>
-${esc(ino)}<br>
-Date: ${new Date().toLocaleDateString("en-IN")}
+<div class="form-row">
+<div class="form-group">
+<label for="reqStudents">Approx. Students (Optional)</label>
+<input id="reqStudents" name="students" type="number" min="0" placeholder="e.g. 600">
 </div>
-
-</div>
-
-<h1 style="text-align:center">
-Invoice
-</h1>
-
-<div class="info">
-
-<div class="box">
-
-<b>Bill To</b><br><br>
-
-${esc(row.school_name)}<br>
-${esc(row.city)}<br>
-${esc(row.contact_person)}<br>
-${esc(row.phone)}<br>
-${esc(row.email)}
-
-</div>
-
-<div class="box">
-
-<b>Requirement</b><br><br>
-Requirement ID: ${esc(row.requirement_id)}<br>
-Segments & Quantity:
-<table style="width:100%;margin-top:8px;border-collapse:collapse">
-<thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid #ddd">Segment</th><th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">Qty</th></tr></thead>
-<tbody>
-${segmentRowsHtml(row)}
-<tr><th style="text-align:left;padding:6px;border-top:2px solid #ddd">Total</th><th style="text-align:right;padding:6px;border-top:2px solid #ddd">${esc(c.quantity)}</th></tr>
-</tbody>
-</table>
-<br>
-
-<b>Invoice Details</b><br><br>
-
-Invoice:
-${esc(ino)}
-<br>
-
-Quotation:
-${esc(qno)}
-<br>
-
-PO Number:
-${esc(row.po_number || "—")}
-<br>
-
-Due Date:
-${esc(row.invoice_due_date || "As mutually agreed")}
-
-</div>
-
-</div>
-
-<table>
-
-<tr>
-<th>Description</th>
-<th class="right">Amount</th>
-</tr>
-
-${segmentQuotationRowsHtml(row)}
-
-<tr>
-<td>Custom Cover</td>
-<td class="right">
-₹${c.cover.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>Custom Content</td>
-<td class="right">
-₹${c.content.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>Subtotal</td>
-<td class="right">
-₹${c.subtotal.toFixed(2)}
-</td>
-</tr>
-
-<tr>
-<td>GST (${c.gst}%)</td>
-<td class="right">
-₹${c.gstAmount.toFixed(2)}
-</td>
-</tr>
-
-<tr class="total">
-<td>Grand Total</td>
-<td class="right">
-₹${c.total.toFixed(2)}
-</td>
-</tr>
-
-</table>
-
-<div class="footer">
-
-<b>Payment Terms:</b><br>
-${esc(row.payment_terms || "As mutually agreed")}
-<br><br>
-
-<b>Payment Details:</b><br>
-${esc(row.bank_details || "")}
-<br><br>
-
-<b>Notes:</b><br>
-${esc(row.invoice_notes || "")}
-
-</div>
-
-</div>
-
-</body>
-</html>`;
-}
-
-/* ================= ADMIN DASHBOARD ================= */
-
-function adminDashboard() {
-  const options = STATUSES.map(
-    s => `<option value="${esc(s)}">${esc(s)}</option>`
-  ).join("");
-
-  return `<!doctype html>
-<html>
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1"
->
-
-<title>
-CikNotebooks Admin Dashboard
-</title>
-
-<style>
-
-body{
-  margin:0;
-  background:#f4f6f8;
-  font-family:Arial;
-  color:#111827;
-}
-
-header{
-  background:#102a56;
-  color:#fff;
-  padding:18px 25px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-button{
-  border:0;
-  border-radius:8px;
-  padding:9px 13px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.logout{
-  background:#fff;
-  color:#102a56;
-}
-
-main{
-  padding:20px;
-  max-width:1600px;
-  margin:auto;
-}
-
-.status-grid{
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:12px;
-  margin-bottom:18px;
-}
-
-.status-card{
-  background:#fff;
-  border:2px solid transparent;
-  border-radius:14px;
-  padding:15px;
-  cursor:pointer;
-  box-shadow:0 3px 12px #0000000a;
-  transition:all .18s ease;
-}
-
-.status-card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 8px 20px #00000012;
-}
-
-.status-card.active{
-  border-color:#102a56;
-  box-shadow:0 0 0 2px #102a5620;
-}
-
-.status-icon{
-  font-size:24px;
-  margin-bottom:7px;
-}
-
-.status-name{
-  font-size:13px;
-  color:#555;
-  font-weight:bold;
-  line-height:1.3;
-}
-
-.status-count{
-  font-size:25px;
-  font-weight:bold;
-  color:#102a56;
-  margin-top:5px;
-}
-
-.status-card.approved{
-  border-color:#bbf7d0;
-}
-
-.status-card.approved .status-count{
-  color:#166534;
-}
-
-.status-card.sent{
-  border-color:#fde68a;
-}
-
-.status-card.pending{
-  border-color:#fed7aa;
-}
-
-.status-card.po{
-  border-color:#dbeafe;
-}
-
-.status-card.design{
-  border-color:#e9d5ff;
-}
-
-.status-card.production{
-  border-color:#fecaca;
-}
-
-.status-card.dispatch{
-  border-color:#c7d2fe;
-}
-
-.status-card.delivered{
-  border-color:#bbf7d0;
-}
-
-.status-card.renewal{
-  border-color:#fde68a;
-}
-
-.status-card.all{
-  border-color:#e5e7eb;
-}
-
-.dashboard-filter{
-  margin-bottom:15px;
-  color:#555;
-  font-size:14px;
-}
-
-.dashboard-filter b{
-  color:#102a56;
-}
-
-.tools{
-  background:white;
-  padding:15px;
-  border-radius:12px;
-  margin-bottom:18px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-input,
-select{
-  padding:10px;
-  border:1px solid #ddd;
-  border-radius:8px;
-}
-
-.tablebox{
-  background:white;
-  border-radius:14px;
-  overflow:auto;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:1200px;
-}
-
-th,
-td{
-  padding:11px;
-  border-bottom:1px solid #eee;
-  text-align:left;
-  vertical-align:top;
-}
-
-th{
-  background:#f8fafc;
-}
-
-.status{
-  width:180px;
-}
-
-.action{
-  display:flex;
-  gap:5px;
-  flex-wrap:wrap;
-}
-
-.action button{
-  background:#102a56;
-  color:#fff;
-  font-size:12px;
-}
-
-.amount{
-  font-weight:bold;
-}
-
-.paid-badge{
-  display:inline-block;
-  background:#dcfce7;
-  color:#166534;
-  padding:5px 9px;
-  border-radius:999px;
-  font-weight:bold;
-}
-.pending-badge{
-  display:inline-block;
-  background:#f1f5f9;
-  color:#475569;
-  padding:5px 9px;
-  border-radius:999px;
-}
-.msg{
-  background:#fff7ed;
-  color:#9a3412;
-  padding:8px;
-  border-radius:7px;
-  font-size:12px;
-}
-
-.approval-info{
-  background:#ecfdf5;
-  color:#166534;
-  padding:8px;
-  border-radius:7px;
-  font-size:12px;
-  margin-top:6px;
-}
-
-.empty,
-.loading{
-  padding:35px;
-  text-align:center;
-  color:#777;
-}
-
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#0008;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.modalbox{
-  background:#fff;
-  width:95%;
-  max-width:650px;
-  padding:25px;
-  border-radius:15px;
-}
-
-.modalbox h2{
-  margin-top:0;
-}
-
-.formgrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-
-.formgrid .full{
-  grid-column:1/-1;
-}
-
-.formgrid label{
-  display:block;
-  font-weight:bold;
-  font-size:13px;
-  margin-bottom:5px;
-}
-
-.formgrid input,
-.formgrid textarea{
-  width:100%;
-  box-sizing:border-box;
-}
-
-.formgrid textarea{
-  min-height:100px;
-  padding:10px;
-  border:1px solid #ddd;
-  border-radius:8px;
-}
-
-.primary{
-  background:#102a56;
-  color:white;
-}
-
-.close{
-  background:#eee;
-}
-
-@media(max-width:1200px){
-  .status-grid{
-    grid-template-columns:repeat(3,1fr);
-  }
-}
-
-@media(max-width:700px){
-  .status-grid{
-    grid-template-columns:repeat(2,1fr);
-  }
-
-  .formgrid{
-    grid-template-columns:1fr;
-  }
-
-  .formgrid .full{
-    grid-column:auto;
-  }
-}
-
-</style>
-
-</head>
-
-<body>
-
-<header>
-
-<div>
-
-<b>CikNotebooks Admin</b><br>
-
-<small>
-School Requirement Management
-</small>
-
-</div>
-
-<button
-class="logout"
-onclick="logout()"
->
-Logout
-</button>
-
-</header>
-
-<main>
-
-<div
-id="statusCards"
-class="status-grid"
->
-</div>
-
-<div class="dashboard-filter">
-
-Showing:
-<b id="currentFilterLabel">
-All Requirements
-</b>
-
-</div>
-
-<div class="tools">
-
-<input
-id="search"
-placeholder="Search school / ID / contact..."
-oninput="render()"
->
-
-<select
-id="filter"
-onchange="statusFilterChanged()"
->
-
-<option value="">
-All Statuses
-</option>
-
-${options}
-
+<div class="form-group">
+<label for="reqPerStudent">Notebooks per Student</label>
+<select id="reqPerStudent" name="notebooks_per_student">
+<option value="1">1 notebook</option>
+<option value="2">2 notebooks</option>
+<option value="3">3 notebooks</option>
+<option value="4">4 notebooks</option>
 </select>
-
-<button onclick="clearDashboardFilter()">
-All Requirements
-</button>
-
-<button onclick="load()">
-Refresh
-</button>
-
+</div>
 </div>
 
-<div
-id="table"
-class="tablebox"
->
+<div class="form-row">
+<div class="form-group">
+<label for="reqCover">Custom School Cover?</label>
+<select id="reqCover" name="custom_cover">
+<option value="Yes">Yes</option>
+<option value="No">No</option>
+</select>
+</div>
+<div class="form-group">
+<label for="reqContent">Custom Content?</label>
+<select id="reqContent" name="custom_content">
+<option value="Yes">Yes</option>
+<option value="No">No</option>
+</select>
+</div>
+</div>
 
-<div class="loading">
-Loading...
+<div class="form-group">
+<label for="reqDelivery">Preferred Delivery / Academic Requirement Date</label>
+<input id="reqDelivery" name="delivery_date" type="date">
+</div>
+
+<div class="form-group">
+<label for="reqDetails">Special Requirements / Notes</label>
+<textarea id="reqDetails" name="requirements" placeholder="Tell us about preferred topics, school requirements, cover preferences, classes, quantity details or anything else we should know."></textarea>
+</div>
+
+<label class="checkbox-row">
+<input type="checkbox" id="reqConsent" required>
+<span>I confirm that the information provided is for discussing CikNotebooks requirements for my school.</span>
+</label>
+
+<button type="submit" class="requirement-submit">Submit School Requirement</button>
+
+<div class="request-success" id="requestSuccess">
+<strong style="color:#168044;">✓ School requirement submitted successfully</strong>
+<div class="success-id" id="successRequirementId">CIK-2026-00000</div>
+<p class="success-warning">Your requirement has been received by CikNotebooks. Keep this Requirement ID and your registered phone number — they are used to access the School Portal and quotation.</p>
+<div class="requirement-summary" id="requirementSummary"></div>
+<div class="success-actions">
+<a href="#" id="schoolPortalLink" class="success-portal" target="_blank">Open School Portal</a>
+<a href="#" id="copyRequirementId" class="copy-id">Copy Requirement ID</a>
+<a href="#" id="whatsappRequirementLink" class="whatsapp-success" target="_blank">Continue on WhatsApp</a>
+<a href="#" id="newRequirementButton" class="new-request">Create Another Requirement</a>
+</div>
+<p class="success-next"><strong>Next:</strong> CikNotebooks will review the requirement, prepare the quotation, and update its status in the School Portal.</p>
+</div>
+<div class="request-error" id="requestError"></div>
+
+</form>
+
+<div class="requirement-aside">
+
+<div class="process-card">
+<h3>What Happens Next?</h3>
+
+<div class="process-step">
+<div class="process-number">1</div>
+<div><strong>Requirement Received</strong><span>Your school requirements are reviewed.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">2</div>
+<div><strong>Quotation</strong><span>We discuss quantity, customization and pricing.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">3</div>
+<div><strong>School Approval</strong><span>School reviews and approves the quotation.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">4</div>
+<div><strong>Purchase Order</strong><span>School shares the required order confirmation / PO.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">5</div>
+<div><strong>Final Design Approval</strong><span>School-specific cover and content are finalized.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">6</div>
+<div><strong>Production & Delivery</strong><span>Notebooks are produced and delivered as planned.</span></div>
+</div>
+
+<div class="process-step">
+<div class="process-number">7</div>
+<div><strong>Feedback & Next Cycle</strong><span>Feedback helps plan the next fresh notebook cycle.</span></div>
+</div>
+</div>
+
+<div class="process-card">
+<h3>Already Registered?</h3>
+<p style="color:#687287;font-size:14px;margin-bottom:14px;">Use your Requirement ID and registered phone number to view your quotation and respond through the School Portal.</p>
+<a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank" class="btn btn-primary" style="width:100%;text-align:center;">Open School Portal</a>
+</div>
+
+<div class="trust-card">
+<h3>Built for School Partnerships</h3>
+<p>CikNotebooks is designed as a long-term school partnership model — from requirement and customization to delivery, feedback and future notebook cycles.</p>
 </div>
 
 </div>
+</div>
+</div>
+</section>
 
-</main>
+<section>
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Fresh Learning</div>
+<h2>Learning content can evolve with every new notebook cycle.</h2>
+<p>CikNotebooks is designed around fresh and progressively updated content so students can continue discovering new ideas rather than repeatedly seeing the same material.</p>
+</div>
+<div class="cards">
+<div class="card"><div class="icon">🔄</div><h3>Fresh Content</h3><p>New content themes can be introduced across notebook cycles, subject to school requirements and production planning.</p></div>
+<div class="card"><div class="icon">📚</div><h3>Progressive Learning</h3><p>Concepts become more sophisticated as students move from one age segment to the next.</p></div>
+<div class="card"><div class="icon">🌍</div><h3>Real-world Connection</h3><p>Students are encouraged to connect classroom learning with real situations, technologies and opportunities.</p></div>
+</div>
+</div>
+</section>
 
-<div
-id="quoteModal"
-class="modal"
->
+<section id="impact" class="impact">
+<div class="container">
+<div class="section-head">
+<div class="eyebrow">Our Social Impact Commitment</div>
+<h2>A notebook that goes beyond writing.</h2>
+<p>We believe every child deserves more than a place to write. They deserve a place to discover, question, imagine and build their future.</p>
+</div>
+<div class="impact-grid">
+<div class="impact-item"><strong>01. Education for All</strong><p>Supporting education of economically disadvantaged students through essential educational support.</p></div>
+<div class="impact-item"><strong>02. Supporting Underprivileged Students</strong><p>Helping provide notebooks, stationery and other educational resources to students in need.</p></div>
+<div class="impact-item"><strong>03. Student Merit Reward</strong><p>Supporting student achievement through merit-oriented initiatives subject to program requirements.</p></div>
+<div class="impact-item"><strong>04. Future-Ready Learning</strong><p>Encouraging exploration of AI, technology, innovation, entrepreneurship, financial literacy and life skills.</p></div>
+<div class="impact-item"><strong>05. Empowering Young Minds</strong><p>Helping students develop confidence to think independently, solve problems and create ideas.</p></div>
+</div>
+</div>
+</section>
 
-<div class="modalbox">
-
-<h2>
-Create / Update Quotation
-</h2>
-
-<input
-type="hidden"
-id="qid"
->
-
-<div class="formgrid">
-
+<section id="contact" class="contact">
+<div class="container contact-grid">
 <div>
-<label>Notebook Rate</label>
-<input id="rate" type="number" step="0.01">
+<div class="eyebrow">Partner With CikNotebooks</div>
+<h2>Bring future-ready learning into your school.</h2>
+<p>If you are a school principal, academic coordinator, management representative or educator, let's explore how CikNotebooks can work for your students.</p>
+<div class="contact-details">
+<p><strong>Founder</strong><br>Abhishek Kumar</p>
+<p><strong>WhatsApp</strong><br><a href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank">+91 92340 11955</a></p>
+<p><strong>Email</strong><br><a href="mailto:abhifund@gmail.com">abhifund@gmail.com</a></p>
+<p><strong>Location</strong><br>Jharkhand, India</p>
+</div>
 </div>
 
+<form action="https://formsubmit.co/abhifund@gmail.com" method="POST">
+<input type="hidden" name="_subject" value="New CikNotebooks School Enquiry">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_captcha" value="true">
+<input type="hidden" name="_autoresponse" value="Thank you for contacting CikNotebooks. We have received your enquiry and will get back to you soon.">
+<input type="hidden" name="_honey" style="display:none">
+<input type="text" name="school_name" placeholder="School Name *" required>
+<input type="text" name="contact_person" placeholder="Contact Person *" required>
+<input type="text" name="designation" placeholder="Designation">
+<input type="tel" name="phone" placeholder="Phone Number *" required>
+<input type="email" name="email" placeholder="Email *" required>
+<input type="text" name="city" placeholder="City *" required>
+<input type="number" name="number_of_students" placeholder="Approx. Number of Students" min="1">
+<select name="segment">
+<option value="">Classes / Segment Interested In</option>
+<option>Segment 1 — Classes 1–3</option>
+<option>Segment 2 — Classes 4–6</option>
+<option>Segment 3 — Classes 7–9</option>
+<option>Segment 4 — Classes 10–12</option>
+<option>Multiple Segments</option>
+</select>
+<textarea name="message" placeholder="Tell us about your school / requirements"></textarea>
+<button type="submit">Request School Demo</button>
+</form>
+</div>
+</section>
+
+<footer>
+<div class="container footer-grid">
 <div>
-<label>GST %</label>
-<input id="gst" type="number" step="0.01">
+<h3>CikNotebooks</h3>
+<p>Content-Infused Knowledge Notebooks.</p>
+<p style="margin-top:10px;">Every Notebook Can Teach Something.</p>
+<p style="margin-top:10px;">Learn • Think • Solve • Create • Grow</p>
+<p style="margin-top:10px;">Founded by Abhishek Kumar</p>
 </div>
-
 <div>
-<label>Custom Cover Charge</label>
-<input id="cover" type="number" step="0.01">
+<h3>Explore</h3>
+<ul>
+<li><a href="#about">About</a></li>
+<li><a href="#segments">Segments</a></li>
+<li><a href="#topics">Topics</a></li>
+<li><a href="#schools">For Schools</a></li>
+<li><a href="#school-request">Request a Quote</a></li>
+<li><a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank">School Portal</a></li>
+<li><a href="#impact">Social Impact</a></li>
+</ul>
 </div>
-
 <div>
-<label>Custom Content Charge</label>
-<input id="content" type="number" step="0.01">
+<h3>Connect</h3>
+<ul>
+<li><a href="#school-request">Request a Quote</a></li>
+<li><a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank">School Portal</a></li>
+<li><a href="#contact">Request Demo</a></li>
+<li><a href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank">WhatsApp: +91 92340 11955</a></li>
+<li><a href="mailto:abhifund@gmail.com">Email: abhifund@gmail.com</a></li>
+<li>Jharkhand, India</li>
+</ul>
+</div>
+</div>
+<div class="container copyright">© 2026 CikNotebooks. All Rights Reserved. • School Partnership Platform</div>
+</footer>
+
+<!-- CIKNOTEBOOKS AI CHAT BUTTON -->
+<button class="cik-ai-button" id="cikAiButton" aria-label="Open CikNotebooks AI">🤖 CikNotebooks AI</button>
+
+<!-- CIKNOTEBOOKS AI CHAT WINDOW -->
+<div class="cik-ai-chat" id="cikAiChat">
+<div class="cik-ai-header">
+<div class="cik-ai-title">
+<div class="cik-ai-avatar">🤖</div>
+<div><strong>CikNotebooks AI</strong><small>Learn • Think • Solve • Create • Grow</small></div>
+</div>
+<button class="cik-ai-close" id="cikAiClose" aria-label="Close">×</button>
 </div>
 
+<div class="cik-ai-messages" id="cikAiMessages">
+<div class="cik-ai-message cik-ai-bot">
+Hi! 👋 I'm CikNotebooks AI.
+
+Ask me about CikNotebooks, future-ready learning, AI, technology, entrepreneurship, financial literacy, or anything you're curious about.
+</div>
 <div>
-<label>Quotation Validity</label>
-<input id="validity" value="15 days">
+<button class="cik-ai-suggestion" onclick="cikAskSuggestion('What is CikNotebooks?')">What is CikNotebooks?</button>
+<button class="cik-ai-suggestion" onclick="cikAskSuggestion('What are the four CikNotebooks segments?')">Four Segments</button>
+<button class="cik-ai-suggestion" onclick="cikAskSuggestion('How can CikNotebooks help schools?')">For Schools</button>
+<button class="cik-ai-suggestion" onclick="cikAskSuggestion('What future skills can students learn?')">Future Skills</button>
+</div>
 </div>
 
-<div>
-<label>Payment Terms</label>
-<input id="terms" value="As mutually agreed">
+<div class="cik-ai-input-area">
+<input type="text" id="cikAiInput" class="cik-ai-input" placeholder="Ask CikNotebooks AI..." autocomplete="off">
+<button id="cikAiSend" class="cik-ai-send" aria-label="Send message">➤</button>
+</div>
 </div>
 
-<div class="full">
-<label>Bank / Payment Details</label>
-<textarea id="bank"></textarea>
-</div>
-
-</div>
-
-<br>
-
-<button
-class="primary"
-onclick="saveQuote()"
->
-Save & Send Quotation
-</button>
-
-<button
-class="close"
-onclick="closeModal('quoteModal')"
->
-Cancel
-</button>
-
-</div>
-
-</div>
-
-<div
-id="invoiceModal"
-class="modal"
->
-
-<div class="modalbox">
-
-<h2>
-Generate Invoice
-</h2>
-
-<input
-type="hidden"
-id="iid"
->
-
-<div class="formgrid">
-
-<div>
-<label>PO Number</label>
-<input id="po">
-</div>
-
-<div>
-<label>Due Date</label>
-<input id="due" type="date">
-</div>
-
-<div class="full">
-<label>Invoice Notes</label>
-<textarea id="invoiceNote"></textarea>
-</div>
-
-</div>
-
-<br>
-
-<button
-class="primary"
-onclick="saveInvoice()"
->
-Generate Invoice
-</button>
-
-<button
-class="close"
-onclick="closeModal('invoiceModal')"
->
-Cancel
-</button>
-
-</div>
-
-</div>
+<a class="whatsapp" href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank" aria-label="Chat on WhatsApp">☎</a>
 
 <script>
+/* =====================================================
+   CIKNOTEBOOKS B2B SCHOOL REQUIREMENT SYSTEM
+   Existing Cloudflare B2B Worker preserved.
+   ===================================================== */
 
-let rows = [];
+const CIK_B2B_API = "https://ciknotebooks-b2b.abhishek88096.workers.dev/api/requirements";
+const CIK_B2B_PORTAL = "https://ciknotebooks-b2b.abhishek88096.workers.dev/portal";
 
-const statuses = ${JSON.stringify(STATUSES)};
+const reqStudents = document.getElementById("reqStudents");
+const reqPerStudent = document.getElementById("reqPerStudent");
+const reqQuantity = document.getElementById("reqQuantity");
+const reqQuantityDisplay = document.getElementById("reqQuantityDisplay");
+const segmentChecks = Array.from(document.querySelectorAll(".segment-check"));
+const segmentQtyInputs = Array.from(document.querySelectorAll(".segment-qty"));
 
-function escJs(v){
-  return String(v ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#39;");
+function updateSegmentQuantities(){
+    let total = 0;
+    segmentChecks.forEach(check => {
+        const qty = document.querySelector('.segment-qty[data-segment="' + CSS.escape(check.dataset.segment) + '"]');
+        if(!qty) return;
+        qty.disabled = !check.checked;
+        if(!check.checked) qty.value = "";
+        const value = Number(qty.value || 0);
+        if(check.checked && value > 0) total += value;
+    });
+    reqQuantity.value = total;
+    reqQuantityDisplay.textContent = total.toLocaleString("en-IN");
 }
 
-function money(v){
-  return "₹" + Number(v || 0).toLocaleString("en-IN",{
-    minimumFractionDigits:2,
-    maximumFractionDigits:2
-  });
-}
-
-function statusOptions(selected){
-  return statuses.map(function(s){
-    return "<option value='" +
-      escJs(s) +
-      "'" +
-      (s === selected ? " selected" : "") +
-      ">" +
-      escJs(s) +
-      "</option>";
-  }).join("");
-}
-
-const dashboardCards = [
-
-  {
-    key:"ALL",
-    icon:"📊",
-    name:"All Requirements",
-    className:"all",
-    match:function(r){
-      return true;
-    }
-  },
-
-  {
-    key:"New Requirement",
-    icon:"🆕",
-    name:"New Requirements",
-    className:"pending",
-    match:function(r){
-      return r.status === "New Requirement";
-    }
-  },
-
-  {
-    key:"QUOTATION_PENDING",
-    icon:"💬",
-    name:"Quotation Pending",
-    className:"pending",
-    match:function(r){
-      return [
-        "New Requirement",
-        "Quotation Changes Requested"
-      ].includes(r.status);
-    }
-  },
-
-  {
-    key:"Quotation Sent",
-    icon:"🟡",
-    name:"Quotation Sent",
-    className:"sent",
-    match:function(r){
-      return r.status === "Quotation Sent";
-    }
-  },
-
-  {
-    key:"Quotation Approved",
-    icon:"🟢",
-    name:"Quotation Approved",
-    className:"approved",
-    match:function(r){
-      return r.status === "Quotation Approved";
-    }
-  },
-
-  {
-    key:"PO Received",
-    icon:"📄",
-    name:"PO Received",
-    className:"po",
-    match:function(r){
-      return r.status === "PO Received";
-    }
-  },
-
-  {
-    key:"Design Approval",
-    icon:"🎨",
-    name:"Design Approval",
-    className:"design",
-    match:function(r){
-      return r.status === "Design Approval";
-    }
-  },
-
-  {
-    key:"PRODUCTION",
-    icon:"🏭",
-    name:"Production",
-    className:"production",
-    match:function(r){
-      return [
-        "Production Started",
-        "Quality Check"
-      ].includes(r.status);
-    }
-  },
-
-  {
-    key:"DISPATCH",
-    icon:"🚚",
-    name:"Dispatch",
-    className:"dispatch",
-    match:function(r){
-      return r.status === "Ready for Dispatch";
-    }
-  },
-
-  {
-    key:"Delivered",
-    icon:"✅",
-    name:"Delivered",
-    className:"delivered",
-    match:function(r){
-      return r.status === "Delivered";
-    }
-  },
-
-  {
-    key:"Renewal Due",
-    icon:"🔄",
-    name:"Renewal Due",
-    className:"renewal",
-    match:function(r){
-      return r.status === "Renewal Due";
-    }
-  }
-
-];
-
-let currentDashboardFilter = "ALL";
-
-function renderStatusCards(){
-
-  const box =
-    document.getElementById("statusCards");
-
-  if(!box) return;
-
-  box.innerHTML =
-    dashboardCards.map(function(card){
-
-      const count =
-        rows.filter(card.match).length;
-
-      const active =
-        currentDashboardFilter === card.key;
-
-      return (
-        '<div class="status-card ' +
-        card.className +
-        (active ? " active" : "") +
-        '" onclick="selectDashboardCard(\\'' +
-        card.key +
-        '\\')">' +
-
-        '<div class="status-icon">' +
-        card.icon +
-        "</div>" +
-
-        '<div class="status-name">' +
-        escJs(card.name) +
-        "</div>" +
-
-        '<div class="status-count">' +
-        count +
-        "</div>" +
-
-        "</div>"
-      );
-
-    }).join("");
-}
-
-function selectDashboardCard(key){
-
-  currentDashboardFilter = key;
-
-  const select =
-    document.getElementById("filter");
-
-  if(key === "ALL"){
-    select.value = "";
-  }
-  else if(
-    key === "QUOTATION_PENDING" ||
-    key === "PRODUCTION"
-  ){
-    select.value = "";
-  }
-  else if(key === "DISPATCH"){
-    select.value = "Ready for Dispatch";
-  }
-  else{
-    select.value = key;
-  }
-
-  render();
-}
-
-function clearDashboardFilter(){
-
-  currentDashboardFilter = "ALL";
-
-  document.getElementById("filter").value = "";
-
-  render();
-}
-
-function statusFilterChanged(){
-
-  const value =
-    document.getElementById("filter").value;
-
-  if(value){
-    currentDashboardFilter = value;
-  }
-  else{
-    currentDashboardFilter = "ALL";
-  }
-
-  render();
-}
-
-async function load(){
-
-  const box =
-    document.getElementById("table");
-
-  box.innerHTML =
-    '<div class="loading">Loading...</div>';
-
-  try{
-
-    const r =
-      await fetch(
-        "/api/admin/requirements",
-        {
-          credentials:"same-origin"
-        }
-      );
-
-    if(r.status === 401){
-      location.href = "/admin";
-      return;
-    }
-
-    const data =
-      await r.json();
-
-    if(!r.ok){
-      throw new Error(
-        data.error || "Unable to load."
-      );
-    }
-
-    rows =
-      data.requirements || [];
-
-    renderStatusCards();
-
-    render();
-
-  }
-  catch(e){
-
-    box.innerHTML =
-      '<div class="empty">' +
-      escJs(e.message) +
-      '</div>';
-
-  }
-
-}
-
-function matchesDashboardFilter(r){
-
-  if(currentDashboardFilter === "ALL"){
-    return true;
-  }
-
-  if(
-    currentDashboardFilter === "QUOTATION_PENDING"
-  ){
-
-    return [
-      "New Requirement",
-      "Quotation Changes Requested"
-    ].includes(r.status);
-
-  }
-
-  if(
-    currentDashboardFilter === "PRODUCTION"
-  ){
-
-    return [
-      "Production Started",
-      "Quality Check"
-    ].includes(r.status);
-
-  }
-
-  return r.status === currentDashboardFilter;
-}
-
-function segmentDisplay(r){
-  try{
-    const data = JSON.parse(r.segments_json || "[]");
-    if(Array.isArray(data) && data.length){
-      return data
-        .filter(function(x){ return x && x.segment && Number(x.quantity) > 0; })
-        .map(function(x){
-          return escJs(x.segment) + " — " + escJs(x.quantity);
+segmentChecks.forEach(check => check.addEventListener("change", updateSegmentQuantities));
+segmentQtyInputs.forEach(input => input.addEventListener("input", updateSegmentQuantities));
+
+function getSelectedSegments(){
+    return segmentChecks
+        .filter(check => check.checked)
+        .map(check => {
+            const qty = document.querySelector('.segment-qty[data-segment="' + CSS.escape(check.dataset.segment) + '"]');
+            return {segment: check.dataset.segment, quantity: Number(qty?.value || 0)};
         })
-        .join("<br>");
-    }
-  }catch(e){}
-
-  return escJs(r.segment || "");
+        .filter(item => item.quantity > 0);
 }
 
-function quantityDisplay(r){
-  try{
-    const data = JSON.parse(r.segments_json || "[]");
-    if(Array.isArray(data) && data.length){
-      return data
-        .filter(function(x){ return x && Number(x.quantity) > 0; })
-        .reduce(function(total,x){ return total + Number(x.quantity || 0); },0);
-    }
-  }catch(e){}
-
-  return Number(r.quantity || 0);
+function buildRequirementData(){
+    const perStudent = Number(document.getElementById("reqPerStudent").value || 1);
+    const segments = getSelectedSegments();
+    const totalQuantity = segments.reduce((sum,item) => sum + item.quantity, 0);
+    return {
+        school_name: document.getElementById("reqSchoolName").value.trim(),
+        contact_person: document.getElementById("reqContact").value.trim(),
+        designation: document.getElementById("reqDesignation").value.trim(),
+        phone: document.getElementById("reqPhone").value.trim(),
+        email: document.getElementById("reqEmail").value.trim(),
+        city: document.getElementById("reqCity").value.trim(),
+        segment: segments.map(item => item.segment).join(", "),
+        segments: segments,
+        students: Number(document.getElementById("reqStudents").value || 0),
+        notebooks_per_student: perStudent,
+        quantity: totalQuantity,
+        custom_cover: document.getElementById("reqCover").value,
+        custom_content: document.getElementById("reqContent").value,
+        delivery_date: document.getElementById("reqDelivery").value,
+        notes: document.getElementById("reqDetails").value.trim()
+    };
 }
 
-function render(){
+function formatRequirementSummary(id,data){
+    return "Requirement ID: " + id +
+    "\nSchool: " + data.school_name +
+    "\nContact: " + data.contact_person +
+    (data.designation ? " (" + data.designation + ")" : "") +
+    "\nPhone: " + data.phone +
+    "\nEmail: " + data.email +
+    "\nCity: " + data.city +
+    "\nSegments & Quantities: " + data.segments.map(item => item.segment + " = " + item.quantity).join(" | ") +
+    "\nStudents: " + (data.students || "Not specified") +
+    "\nTotal Required Notebooks: " + data.quantity +
+    "\nCustom Cover: " + data.custom_cover +
+    "\nCustom Content: " + data.custom_content +
+    (data.delivery_date ? "\nPreferred Delivery Date: " + data.delivery_date : "") +
+    (data.notes ? "\nRequirements: " + data.notes : "");
+}
 
-  const q =
-    document.getElementById("search")
-      .value
-      .toLowerCase();
+async function submitSchoolRequirement(event){
+    event.preventDefault();
+    const form = document.getElementById("schoolRequirementForm");
+    const submitButton = form.querySelector(".requirement-submit");
+    const errorBox = document.getElementById("requestError");
+    const successBox = document.getElementById("requestSuccess");
+    const data = buildRequirementData();
 
-  const f =
-    document.getElementById("filter")
-      .value;
+    if(!data.segments.length || data.quantity <= 0){
+        errorBox.textContent = "Please select at least one segment and enter its required quantity.";
+        errorBox.classList.add("active");
+        return;
+    }
 
-  const list =
-    rows.filter(function(r){
+    errorBox.classList.remove("active");
+    errorBox.textContent = "";
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting Requirement…";
 
-      const text = [
-        r.school_name,
-        r.contact_person,
-        r.phone,
-        r.email,
-        r.city,
-        r.segment,
-        r.segments_json,
-        r.requirement_id
-      ]
-      .join(" ")
-      .toLowerCase();
+    try{
+        const response = await fetch(CIK_B2B_API,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(data)
+        });
+        let result = {};
+        try{ result = await response.json(); }catch(_){ }
+        if(!response.ok || !result.success || !result.requirement_id){
+            throw new Error(result.error || "We could not submit the requirement right now. Please try again or contact us on WhatsApp.");
+        }
 
-      return (
-        (!q || text.includes(q)) &&
-        (!f || r.status === f) &&
-        matchesDashboardFilter(r)
-      );
+        const requirementId = result.requirement_id;
+        const portalUrl = CIK_B2B_PORTAL + "?rid=" + encodeURIComponent(requirementId);
+        const summary = formatRequirementSummary(requirementId,data);
 
-    });
+        document.getElementById("successRequirementId").textContent = requirementId;
+        document.getElementById("requirementSummary").textContent = summary;
+        document.getElementById("schoolPortalLink").href = portalUrl;
 
-  const label =
-    document.getElementById(
-      "currentFilterLabel"
+        const whatsappText =
+            "Hello CikNotebooks,\n\n"+
+            "Our school requirement has been submitted.\n\n"+
+            summary+
+            "\n\nPlease guide us regarding quotation and next steps.";
+        document.getElementById("whatsappRequirementLink").href =
+            "https://wa.me/919234011955?text=" + encodeURIComponent(whatsappText);
+
+        document.getElementById("copyRequirementId").onclick = async function(e){
+            e.preventDefault();
+            try{
+                await navigator.clipboard.writeText(requirementId);
+                this.textContent = "Copied ✓";
+                setTimeout(()=>this.textContent="Copy Requirement ID",1800);
+            }catch(_){
+                alert("Requirement ID: " + requirementId);
+            }
+        };
+
+        successBox.classList.add("active");
+        successBox.scrollIntoView({behavior:"smooth",block:"center"});
+        submitButton.textContent = "Requirement Submitted ✓";
+    }catch(error){
+        console.error("B2B requirement submission error:",error);
+        errorBox.textContent = error.message || "Unable to submit the requirement.";
+        errorBox.classList.add("active");
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit School Requirement";
+    }
+}
+
+document.getElementById("newRequirementButton").addEventListener("click",function(event){
+    event.preventDefault();
+    const form = document.getElementById("schoolRequirementForm");
+    form.reset();
+    document.getElementById("requestSuccess").classList.remove("active");
+    document.getElementById("requestError").classList.remove("active");
+    form.querySelector(".requirement-submit").disabled = false;
+    form.querySelector(".requirement-submit").textContent = "Submit School Requirement";
+    segmentChecks.forEach(check => check.checked = false);
+    segmentQtyInputs.forEach(input => { input.value = ""; input.disabled = true; });
+    updateSegmentQuantities();
+    document.getElementById("school-request").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+/* Mobile navigation */
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const mobileMenu = document.getElementById("mobileMenu");
+mobileMenuBtn.addEventListener("click",function(){
+    const active = mobileMenu.classList.toggle("active");
+    mobileMenuBtn.setAttribute("aria-expanded", active ? "true" : "false");
+    mobileMenuBtn.textContent = active ? "×" : "☰";
+});
+mobileMenu.querySelectorAll("a").forEach(link=>link.addEventListener("click",()=>{
+    mobileMenu.classList.remove("active");
+    mobileMenuBtn.setAttribute("aria-expanded","false");
+    mobileMenuBtn.textContent="☰";
+}));
+
+/* =====================================================
+   CIKNOTEBOOKS AI ASSISTANT
+   Existing Worker preserved exactly.
+   ===================================================== */
+
+const CIK_AI_WORKER =
+"https://ciknotebooks-ai.abhishek88096.workers.dev";
+
+const cikAiButton =
+document.getElementById("cikAiButton");
+
+const cikAiChat =
+document.getElementById("cikAiChat");
+
+const cikAiClose =
+document.getElementById("cikAiClose");
+
+const cikAiInput =
+document.getElementById("cikAiInput");
+
+const cikAiSend =
+document.getElementById("cikAiSend");
+
+const cikAiMessages =
+document.getElementById("cikAiMessages");
+
+
+/* OPEN AI CHAT */
+cikAiButton.addEventListener("click", function(){
+    cikAiChat.classList.add("active");
+    cikAiInput.focus();
+});
+
+
+/* CLOSE AI CHAT */
+cikAiClose.addEventListener("click", function(){
+    cikAiChat.classList.remove("active");
+});
+
+
+/* ADD MESSAGE */
+function cikAddMessage(text,type){
+    const message = document.createElement("div");
+
+    message.className =
+        "cik-ai-message " +
+        (type === "user"
+        ? "cik-ai-user"
+        : "cik-ai-bot");
+
+    message.textContent = text;
+
+    cikAiMessages.appendChild(message);
+
+    cikAiMessages.scrollTop =
+        cikAiMessages.scrollHeight;
+
+    return message;
+}
+
+
+/* SEND MESSAGE */
+async function cikSendMessage(){
+
+    const message =
+        cikAiInput.value.trim();
+
+    if(!message) return;
+
+    cikAddMessage(
+        message,
+        "user"
     );
 
-  const card =
-    dashboardCards.find(function(c){
-      return c.key === currentDashboardFilter;
-    });
-
-  if(label){
-
-    label.textContent =
-      card
-      ? card.name
-      : "All Requirements";
-
-  }
-
-  renderStatusCards();
-
-  if(!list.length){
-
-    document.getElementById("table").innerHTML =
-      '<div class="empty">' +
-      'No requirements found.' +
-      '</div>';
-
-    return;
-  }
-
-  let out =
-    "<table><thead><tr>" +
-    "<th>Requirement</th>" +
-    "<th>School</th>" +
-    "<th>Contact</th>" +
-    "<th>Segment</th>" +
-    "<th>Qty</th>" +
-    "<th>Status</th>" +
-    "<th>Quotation</th>" +
-    "<th>Payment</th>" +
-    "<th>School Request</th>" +
-    "<th>Actions</th>" +
-    "</tr></thead><tbody>";
-
-  list.forEach(function(r){
-
-    out += "<tr>";
-
-    out +=
-      "<td><b>" +
-      escJs(r.requirement_id) +
-      "</b><br><small>" +
-      escJs(r.created_at || "") +
-      "</small></td>";
-
-    out +=
-      "<td><b>" +
-      escJs(r.school_name) +
-      "</b><br>" +
-      escJs(r.city) +
-      "</td>";
-
-    out +=
-      "<td>" +
-      escJs(r.contact_person) +
-      "<br>" +
-      escJs(r.phone) +
-      "<br>" +
-      escJs(r.email) +
-      "</td>";
-
-    out +=
-      "<td>" +
-      segmentDisplay(r) +
-      "</td>";
-
-    out +=
-      "<td>" +
-      escJs(quantityDisplay(r)) +
-      "</td>";
-
-    out +=
-      "<td>" +
-      "<select class='status' " +
-      "onchange='changeStatus(" +
-      r.id +
-      ",this.value)'>" +
-      statusOptions(r.status) +
-      "</select>";
-
-    if(r.status === "Quotation Approved"){
-
-      out +=
-        "<div class='approval-info'>" +
-        "✓ Quotation Approved";
-
-      if(r.quotation_approved_at){
-
-        try{
-
-          out +=
-            "<br>" +
-            new Date(
-              r.quotation_approved_at
-            ).toLocaleString("en-IN");
-
-        }
-        catch(e){}
-
-      }
-
-      out += "</div>";
-
-    }
-
-    out += "</td>";
-
-    out +=
-      "<td>" +
-      money(r.quotation_amount) +
-      "<br><small>" +
-      escJs(r.quotation_number || "") +
-      "</small></td>";
-
-    out +=
-      "<td>" +
-      (r.payment_status === "Paid"
-        ? "<span class='paid-badge'>✓ Paid</span><br><small>" + escJs(r.razorpay_payment_id || "") + "</small>"
-        : "<span class='pending-badge'>" + escJs(r.payment_status || "Pending") + "</span>") +
-      "</td>";
-
-    out +=
-      r.school_change_request
-      ? "<td><div class='msg'>" +
-        escJs(r.school_change_request) +
-        "</div></td>"
-      : "<td>—</td>";
-
-    out +=
-      "<td><div class='action'>" +
-
-      "<button onclick='openQuote(" +
-      r.id +
-      ")'>Quotation</button>" +
-
-      "<button onclick='viewQuote(" +
-      r.id +
-      ")'>View Quote</button>" +
-
-      "<button onclick='waQuote(" +
-      r.id +
-      ")'>WhatsApp</button>" +
-
-      "<button onclick='openInvoice(" +
-      r.id +
-      ")'>Invoice</button>" +
-
-      "<button onclick='viewInvoice(" +
-      r.id +
-      ")'>View Invoice</button>" +
-
-      "<button onclick='waInvoice(" +
-      r.id +
-      ")'>WA Invoice</button>" +
-
-      "</div></td>";
-
-    out += "</tr>";
-
-  });
-
-  out +=
-    "</tbody></table>";
-
-  document.getElementById("table").innerHTML =
-    out;
-}
-
-function find(id){
-
-  return rows.find(
-    r => Number(r.id) === Number(id)
-  );
-
-}
-
-async function changeStatus(id,status){
-
-  try{
-
-    const r =
-      await fetch(
-        "/api/admin/requirements/" + id,
-        {
-          method:"PATCH",
-          credentials:"same-origin",
-          headers:{
-            "Content-Type":"application/json"
-          },
-          body:JSON.stringify({
-            status
-          })
-        }
-      );
-
-    if(r.status === 401){
-
-      location.href = "/admin";
-
-      return;
-
-    }
-
-    const data =
-      await r.json();
-
-    if(!r.ok){
-
-      throw new Error(
-        data.error || "Update failed."
-      );
-
-    }
-
-    await load();
-
-  }
-  catch(e){
-
-    alert(e.message);
-
-  }
-
-}
-
-function openModal(id){
-
-  document.getElementById(id)
-    .style.display = "flex";
-
-}
-
-function closeModal(id){
-
-  document.getElementById(id)
-    .style.display = "none";
-
-}
-
-function openQuote(id){
-
-  const r = find(id);
-
-  if(!r) return;
-
-  document.getElementById("qid").value = id;
-
-  document.getElementById("rate").value =
-    r.notebook_rate || 0;
-
-  document.getElementById("gst").value =
-    r.gst_percent || 0;
-
-  document.getElementById("cover").value =
-    r.cover_charge || 0;
-
-  document.getElementById("content").value =
-    r.content_charge || 0;
-
-  document.getElementById("validity").value =
-    r.quotation_validity || "15 days";
-
-  document.getElementById("terms").value =
-    r.payment_terms || "As mutually agreed";
-
-  document.getElementById("bank").value =
-    r.bank_details || "";
-
-  openModal("quoteModal");
-
-}
-
-async function saveQuote(){
-
-  const id =
-    document.getElementById("qid").value;
-
-  const body = {
-
-    notebook_rate:
-      Number(
-        document.getElementById("rate").value || 0
-      ),
-
-    gst_percent:
-      Number(
-        document.getElementById("gst").value || 0
-      ),
-
-    cover_charge:
-      Number(
-        document.getElementById("cover").value || 0
-      ),
-
-    content_charge:
-      Number(
-        document.getElementById("content").value || 0
-      ),
-
-    quotation_validity:
-      document.getElementById("validity").value,
-
-    payment_terms:
-      document.getElementById("terms").value,
-
-    bank_details:
-      document.getElementById("bank").value,
-
-    status:"Quotation Sent"
-
-  };
-
-  try{
-
-    const r =
-      await fetch(
-        "/api/admin/requirements/" + id,
-        {
-          method:"PATCH",
-          credentials:"same-origin",
-          headers:{
-            "Content-Type":"application/json"
-          },
-          body:JSON.stringify(body)
-        }
-      );
-
-    const data =
-      await r.json();
-
-    if(!r.ok){
-
-      throw new Error(
-        data.error ||
-        "Unable to save quotation."
-      );
-
-    }
-
-    closeModal("quoteModal");
-
-    await load();
-
-    alert(
-      "Quotation saved and marked as Quotation Sent."
-    );
-
-  }
-  catch(e){
-
-    alert(e.message);
-
-  }
-
-}
-
-function viewQuote(id){
-
-  window.open(
-    "/api/admin/quotation/" + id,
-    "_blank"
-  );
-
-}
-
-function openInvoice(id){
-
-  const r = find(id);
-
-  if(!r) return;
-
-  document.getElementById("iid").value = id;
-
-  document.getElementById("po").value =
-    r.po_number || "";
-
-  document.getElementById("due").value =
-    r.invoice_due_date || "";
-
-  document.getElementById("invoiceNote").value =
-    r.invoice_notes || "";
-
-  openModal("invoiceModal");
-
-}
-
-async function saveInvoice(){
-
-  const id =
-    document.getElementById("iid").value;
-
-  const body = {
-
-    po_number:
-      document.getElementById("po").value,
-
-    invoice_due_date:
-      document.getElementById("due").value,
-
-    invoice_notes:
-      document.getElementById("invoiceNote").value,
-
-    status:"Invoice Generated"
-
-  };
-
-  try{
-
-    const r =
-      await fetch(
-        "/api/admin/requirements/" + id,
-        {
-          method:"PATCH",
-          credentials:"same-origin",
-          headers:{
-            "Content-Type":"application/json"
-          },
-          body:JSON.stringify(body)
-        }
-      );
-
-    const data =
-      await r.json();
-
-    if(!r.ok){
-
-      throw new Error(
-        data.error ||
-        "Unable to generate invoice."
-      );
-
-    }
-
-    closeModal("invoiceModal");
-
-    await load();
-
-    viewInvoice(id);
-
-  }
-  catch(e){
-
-    alert(e.message);
-
-  }
-
-}
-
-function viewInvoice(id){
-
-  window.open(
-    "/api/admin/invoice/" + id,
-    "_blank"
-  );
-
-}
-
-function phone(v){
-
-  let p =
-    String(v || "")
-      .replace(/\\D/g,"");
-
-  if(p.length === 10){
-    p = "91" + p;
-  }
-
-  if(
-    p.length === 11 &&
-    p.startsWith("0")
-  ){
-    p = "91" + p.slice(1);
-  }
-
-  return p;
-
-}
-
-function whatsapp(number,message){
-
-  const p = phone(number);
-
-  if(!p){
-
-    alert(
-      "School phone number is not available."
-    );
-
-    return;
-
-  }
-
-  window.open(
-    "https://wa.me/" +
-    p +
-    "?text=" +
-    encodeURIComponent(message),
-    "_blank"
-  );
-
-}
-
-function waQuote(id){
-
-  const r = find(id);
-
-  if(!r) return;
-
-  whatsapp(
-    r.phone,
-
-    "Hello " +
-    (r.contact_person || "") +
-
-    "\\n\\nPlease find the CikNotebooks quotation for " +
-    (r.school_name || "") +
-
-    ".\\n\\nRequirement ID: " +
-    (r.requirement_id || "") +
-
-    "\\nQuotation Number: " +
-    (r.quotation_number || "") +
-
-    "\\nAmount: ₹" +
-    Number(
-      r.quotation_amount || 0
-    ).toLocaleString("en-IN") +
-
-    "\\n\\nThank you,\\nCikNotebooks"
-  );
-
-}
-
-function waInvoice(id){
-
-  const r = find(id);
-
-  if(!r) return;
-
-  whatsapp(
-    r.phone,
-
-    "Hello " +
-    (r.contact_person || "") +
-
-    "\\n\\nPlease find the CikNotebooks invoice for " +
-    (r.school_name || "") +
-
-    ".\\n\\nRequirement ID: " +
-    (r.requirement_id || "") +
-
-    "\\nInvoice Number: " +
-    (r.invoice_number || "") +
-
-    "\\nAmount: ₹" +
-    Number(
-      r.quotation_amount || 0
-    ).toLocaleString("en-IN") +
-
-    "\\n\\nThank you,\\nCikNotebooks"
-  );
-
-}
-
-async function logout(){
-
-  await fetch(
-    "/admin/logout",
-    {
-      method:"POST",
-      credentials:"same-origin"
-    }
-  );
-
-  location.href = "/admin";
-
-}
-
-load();
-
-</script>
-
-</body>
-</html>`;
-}
-
-/* ================= WORKER ================= */
-
-export default {
-
-  async fetch(request, env) {
-
-    if(request.method === "OPTIONS"){
-
-      return new Response(null,{
-        status:204,
-        headers:CORS
-      });
-
-    }
-
-    const url =
-      new URL(request.url);
-
-    const path =
-      url.pathname;
+    cikAiInput.value = "";
+
+    const loadingMessage =
+        cikAddMessage(
+            "Thinking... 🤔",
+            "bot"
+        );
+
+    cikAiSend.disabled = true;
 
     try{
 
-      await db(env);
-
-      /* ADMIN LOGIN */
-
-      if(
-        path === "/admin" &&
-        request.method === "GET"
-      ){
-
-        if(
-          await adminSession(
-            request,
-            env
-          )
-        ){
-
-          return html(
-            adminDashboard()
-          );
-
-        }
-
-        return html(
-          adminLogin()
-        );
-
-      }
-
-      if(
-        path === "/admin/login" &&
-        request.method === "POST"
-      ){
-
-        const form =
-          await request.formData();
-
-        const key =
-          clean(
-            form.get("admin_key")
-          );
-
-        if(
-          !key ||
-          key !== adminKey(env)
-        ){
-
-          return html(
-            adminLogin(
-              "Invalid Admin Key."
-            ),
-            401
-          );
-
-        }
-
-        const session =
-          await hash(
-            adminKey(env)
-          );
-
-        return redirect(
-          "/admin",
-          {
-            "Set-Cookie":
-              setCookie(
-                ADMIN_COOKIE,
-                session,
-                86400
-              )
-          }
-        );
-
-      }
-
-      if(
-        path === "/admin/logout" &&
-        request.method === "POST"
-      ){
-
-        return redirect(
-          "/admin",
-          {
-            "Set-Cookie":
-              deleteCookie(
-                ADMIN_COOKIE
-              )
-          }
-        );
-
-      }
-
-      /* SCHOOL PORTAL */
-
-      if(
-        path === "/portal" &&
-        request.method === "GET"
-      ){
-
-        const row =
-          await schoolSession(
-            request,
-            env
-          );
-
-        if(row){
-
-          return html(
-            portalPage(row)
-          );
-
-        }
-
-        return html(
-          portalLogin(
-            "",
-            url.searchParams.get("rid") || ""
-          )
-        );
-
-      }
-
-      if(
-        path === "/portal/login" &&
-        request.method === "POST"
-      ){
-
-        const form =
-          await request.formData();
-
-        const rid =
-          clean(
-            form.get("requirement_id")
-          );
-
-        const phoneValue =
-          clean(
-            form.get("phone")
-          );
-
-        if(
-          !rid ||
-          !phoneValue
-        ){
-
-          return html(
-            portalLogin(
-              "Please enter Requirement ID and registered phone number.",
-              rid
-            ),
-            400
-          );
-
-        }
-
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements WHERE requirement_id = ?"
-            )
-            .bind(rid)
-            .first();
-
-        if(
-          !row ||
-          !phoneMatch(
-            row.phone,
-            phoneValue
-          )
-        ){
-
-          return html(
-            portalLogin(
-              "Requirement ID or registered phone number is incorrect.",
-              rid
-            ),
-            401
-          );
-
-        }
-
-        const session =
-          await createSchoolSession(
-            row,
-            env
-          );
-
-        return redirect(
-          "/portal",
-          {
-            "Set-Cookie":
-              setCookie(
-                SCHOOL_COOKIE,
-                session,
-                SCHOOL_MAX_AGE
-              )
-          }
-        );
-
-      }
-
-      if(
-        path === "/portal/logout" &&
-        request.method === "POST"
-      ){
-
-        return redirect(
-          "/portal",
-          {
-            "Set-Cookie":
-              deleteCookie(
-                SCHOOL_COOKIE
-              )
-          }
-        );
-
-      }
-
-      /* PUBLIC REQUIREMENT */
-
-      if(
-        path === "/api/requirements" &&
-        request.method === "POST"
-      ){
-
-        const body =
-          await request.json();
-
-        const school =
-          clean(body.school_name);
-
-        const contact =
-          clean(body.contact_person);
-
-        const phoneValue =
-          clean(body.phone);
-
-        const email =
-          clean(body.email);
-
-        const city =
-          clean(body.city);
-
-        const segments = Array.isArray(body.segments)
-          ? body.segments
-              .map(item => ({
-                segment: clean(item?.segment),
-                quantity: num(item?.quantity)
-              }))
-              .filter(item => item.segment && item.quantity > 0)
-          : [];
-
-        const totalQuantity = segments.reduce(
-          (total, item) => total + item.quantity,
-          0
-        );
-
-        const segment =
-          segments.length
-            ? segments.map(item => item.segment).join(", ")
-            : clean(body.segment);
-
-        const students =
-          num(body.students);
-
-        const perStudent =
-          num(
-            body.notebooks_per_student,
-            1
-          );
-
-        const quantity =
-          totalQuantity > 0
-            ? totalQuantity
-            : num(
-                body.quantity,
-                students * perStudent
-              );
-
-        const storedSegments =
-          segments.length
-            ? segments
-            : (segment && quantity > 0
-                ? [{ segment, quantity }]
-                : []);
-
-        if(
-          !school ||
-          !contact ||
-          !phoneValue ||
-          !email ||
-          !city ||
-          !segment ||
-          quantity <= 0
-        ){
-
-          return json(
-            {
-              error:
-                "Please provide all required fields."
-            },
-            400
-          );
-
-        }
-
-        const temporary =
-          "TEMP-" +
-          Date.now() +
-          "-" +
-          Math.floor(
-            Math.random() * 100000
-          );
-
-        const result =
-          await env.DB.prepare(`
-            INSERT INTO school_requirements
-            (
-              requirement_id,
-              school_name,
-              contact_person,
-              designation,
-              phone,
-              email,
-              city,
-              segment,
-              students,
-              notebooks_per_student,
-              quantity,
-              segments_json,
-              custom_cover,
-              custom_content,
-              delivery_date,
-              notes
-            )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-          `)
-          .bind(
-            temporary,
-            school,
-            contact,
-            clean(body.designation),
-            phoneValue,
-            email,
-            city,
-            segment,
-            students,
-            perStudent,
-            quantity,
-            JSON.stringify(storedSegments),
-            clean(body.custom_cover) || "No",
-            clean(body.custom_content) || "No",
-            clean(body.delivery_date),
-            clean(body.notes)
-          )
-          .run();
-
-        const id =
-          result.meta.last_row_id;
-
-        const requirement =
-          reqId(id);
-
-        await env.DB
-          .prepare(
-            "UPDATE school_requirements SET requirement_id=? WHERE id=?"
-          )
-          .bind(
-            requirement,
-            id
-          )
-          .run();
-
-        return json(
-          {
-            success:true,
-            id,
-            requirement_id:requirement,
-            portal_url:
-              "/portal?rid=" +
-              encodeURIComponent(
-                requirement
-              )
-          },
-          201
-        );
-
-      }
-
-      /* SCHOOL QUOTATION APPROVAL */
-
-      if(
-        path === "/api/portal/approve" &&
-        request.method === "POST"
-      ){
-
-        const row =
-          await schoolSession(
-            request,
-            env
-          );
-
-        if(!row){
-
-          return redirect(
-            "/portal",
-            {
-              "Set-Cookie":
-                deleteCookie(
-                  SCHOOL_COOKIE
-                )
-            }
-          );
-
-        }
-
-        const form =
-          await request.formData();
-
-        const rid =
-          clean(
-            form.get("requirement_id")
-          );
-
-        if(
-          rid &&
-          rid !== row.requirement_id
-        ){
-
-          return html(
-            "Invalid request.",
-            400
-          );
-
-        }
-
-        if(
-          ![
-            "Quotation Sent",
-            "Quotation Changes Requested"
-          ].includes(row.status)
-        ){
-
-          return redirect("/portal");
-
-        }
-
-        await env.DB.prepare(`
-          UPDATE school_requirements
-          SET
-            status=?,
-            quotation_approved_at=?,
-            updated_at=CURRENT_TIMESTAMP
-          WHERE id=?
-        `)
-        .bind(
-          "Quotation Approved",
-          new Date().toISOString(),
-          row.id
-        )
-        .run();
-
-        return redirect(
-          "/portal"
-        );
-
-      }
-
-      /* SCHOOL CHANGE REQUEST */
-
-      if(
-        path === "/api/portal/request-changes" &&
-        request.method === "POST"
-      ){
-
-        const row =
-          await schoolSession(
-            request,
-            env
-          );
-
-        if(!row){
-
-          return redirect(
-            "/portal",
-            {
-              "Set-Cookie":
-                deleteCookie(
-                  SCHOOL_COOKIE
-                )
-            }
-          );
-
-        }
-
-        const form =
-          await request.formData();
-
-        const rid =
-          clean(
-            form.get("requirement_id")
-          );
-
-        const message =
-          clean(
-            form.get("message")
-          );
-
-        if(
-          rid &&
-          rid !== row.requirement_id
-        ){
-
-          return html(
-            "Invalid request.",
-            400
-          );
-
-        }
-
-        if(!message){
-
-          return redirect(
-            "/portal"
-          );
-
-        }
-
-        if(
-          ![
-            "Quotation Sent",
-            "Quotation Changes Requested"
-          ].includes(row.status)
-        ){
-
-          return redirect(
-            "/portal"
-          );
-
-        }
-
-        await env.DB.prepare(`
-          UPDATE school_requirements
-          SET
-            status=?,
-            school_change_request=?,
-            quotation_change_requested_at=?,
-            updated_at=CURRENT_TIMESTAMP
-          WHERE id=?
-        `)
-        .bind(
-          "Quotation Changes Requested",
-          message,
-          new Date().toISOString(),
-          row.id
-        )
-        .run();
-
-        return redirect(
-          "/portal"
-        );
-
-      }
-
-      /* RAZORPAY CREATE ORDER */
-
-      if(
-        path === "/api/portal/create-payment-order" &&
-        request.method === "POST"
-      ){
-
-        const row = await schoolSession(request, env);
-
-        if(!row){
-          return json({error:"School session expired. Please login again."},401);
-        }
-
-        if(row.status !== "Quotation Approved"){
-          return json({error:"Payment is available only after quotation approval."},400);
-        }
-
-        if(row.payment_status === "Paid"){
-          return json({error:"This quotation has already been paid."},400);
-        }
-
-        const amount = calculation(row).total;
-
-        if(!Number.isFinite(amount) || amount <= 0){
-          return json({error:"Invalid quotation amount."},400);
-        }
-
-        let orderId = clean(row.razorpay_order_id);
-
-        if(!orderId){
-          const order = await razorpayOrder(
-            amount,
-            row.requirement_id,
-            env
-          );
-
-          orderId = order.id;
-
-          await env.DB.prepare(`
-            UPDATE school_requirements
-            SET
-              razorpay_order_id=?,
-              payment_amount=?,
-              payment_status='Pending',
-              updated_at=CURRENT_TIMESTAMP
-            WHERE id=?
-          `).bind(
-            orderId,
-            amount,
-            row.id
-          ).run();
-        }
-
-        return json({
-          success:true,
-          key_id:clean(env.RAZORPAY_KEY_ID),
-          order_id:orderId,
-          amount:Math.round(amount * 100),
-          currency:"INR",
-          requirement_id:row.requirement_id
-        });
-      }
-
-      /* RAZORPAY VERIFY PAYMENT */
-
-      if(
-        path === "/api/portal/verify-payment" &&
-        request.method === "POST"
-      ){
-
-        const row = await schoolSession(request, env);
-
-        if(!row){
-          return json({error:"School session expired. Please login again."},401);
-        }
-
-        const body = await request.json();
-        const orderId = clean(body.razorpay_order_id);
-        const paymentId = clean(body.razorpay_payment_id);
-        const signature = clean(body.razorpay_signature);
-
-        if(!orderId || !paymentId || !signature){
-          return json({error:"Incomplete payment verification data."},400);
-        }
-
-        if(orderId !== clean(row.razorpay_order_id)){
-          return json({error:"Payment order does not match this requirement."},400);
-        }
-
-        if(row.payment_status === "Paid"){
-          return json({success:true,message:"Payment already recorded."});
-        }
-
-        const secret = clean(env.RAZORPAY_KEY_SECRET);
-
-        if(!secret){
-          return json({error:"Razorpay verification is not configured."},500);
-        }
-
-        const expected = await hmacHex(
-          secret,
-          `${orderId}|${paymentId}`
-        );
-
-        if(expected !== signature){
-          return json({error:"Payment signature verification failed."},400);
-        }
-
-        const amount = calculation(row).total;
-
-        await env.DB.prepare(`
-          UPDATE school_requirements
-          SET
-            payment_status='Paid',
-            razorpay_payment_id=?,
-            razorpay_signature=?,
-            payment_amount=?,
-            payment_paid_at=?,
-            status='Payment Received',
-            updated_at=CURRENT_TIMESTAMP
-          WHERE id=?
-        `).bind(
-          paymentId,
-          signature,
-          amount,
-          new Date().toISOString(),
-          row.id
-        ).run();
-
-        return json({success:true,message:"Payment verified successfully."});
-      }
-
-      /* RAZORPAY WEBHOOK */
-
-      if(
-        path === "/api/razorpay/webhook" &&
-        request.method === "POST"
-      ){
-
-        const rawBody = await request.text();
-        const webhookSecret = clean(env.RAZORPAY_WEBHOOK_SECRET);
-        const receivedSignature = clean(request.headers.get("X-Razorpay-Signature"));
-
-        if(!webhookSecret || !receivedSignature){
-          return new Response("Unauthorized",{status:401});
-        }
-
-        const expectedSignature = await hmacHex(
-          webhookSecret,
-          rawBody
-        );
-
-        if(expectedSignature !== receivedSignature){
-          return new Response("Invalid signature",{status:401});
-        }
-
-        let payload;
-        try{
-          payload = JSON.parse(rawBody);
-        }catch{
-          return new Response("Invalid JSON",{status:400});
-        }
-
-        const event = clean(payload.event);
-
-        if(event === "order.paid" || event === "payment.captured"){
-          const paymentEntity = payload?.payload?.payment?.entity || {};
-          const orderEntity = payload?.payload?.order?.entity || {};
-          const orderId = clean(paymentEntity.order_id || orderEntity.id);
-          const paymentId = clean(paymentEntity.id);
-
-          if(orderId){
-            const row = await env.DB.prepare(
-              "SELECT * FROM school_requirements WHERE razorpay_order_id=?"
-            ).bind(orderId).first();
-
-            if(row){
-              const amount = calculation(row).total;
-
-              await env.DB.prepare(`
-                UPDATE school_requirements
-                SET
-                  payment_status='Paid',
-                  razorpay_payment_id=COALESCE(NULLIF(?,''),razorpay_payment_id),
-                  payment_amount=?,
-                  payment_paid_at=COALESCE(NULLIF(payment_paid_at,''),?),
-                  status='Payment Received',
-                  updated_at=CURRENT_TIMESTAMP
-                WHERE id=?
-              `).bind(
-                paymentId,
-                amount,
-                new Date().toISOString(),
-                row.id
-              ).run();
-            }
-          }
-        }
-
-        return json({success:true});
-      }
-
-      /* SCHOOL QUOTATION */
-
-      if(
-        path === "/api/portal/quotation" &&
-        request.method === "GET"
-      ){
-
-        const row =
-          await schoolSession(
-            request,
-            env
-          );
-
-        if(!row){
-
-          return redirect(
-            "/portal"
-          );
-
-        }
-
-        return html(
-          quotationPage(row)
-        );
-
-      }
-
-      /* ADMIN API AUTH */
-
-      if(
-        path.startsWith("/api/admin/") &&
-        !(await adminSession(
-          request,
-          env
-        ))
-      ){
-
-        return json(
-          {
-            error:"Unauthorized"
-          },
-          401
-        );
-
-      }
-
-      /* ADMIN REQUIREMENTS */
-
-      if(
-        path === "/api/admin/requirements" &&
-        request.method === "GET"
-      ){
-
-        const result =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements ORDER BY id DESC"
-            )
-            .all();
-
-        return json({
-          requirements:
-            result.results || []
-        });
-
-      }
-
-      /* ADMIN REQUIREMENT PATCH */
-
-      const reqMatch =
-        path.match(
-          /^\/api\/admin\/requirements\/(\d+)$/
-        );
-
-      if(
-        reqMatch &&
-        request.method === "PATCH"
-      ){
-
-        const id =
-          Number(reqMatch[1]);
-
-        const body =
-          await request.json();
-
-        const current =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements WHERE id=?"
-            )
-            .bind(id)
-            .first();
-
-        if(!current){
-
-          return json(
-            {
-              error:"Requirement not found."
-            },
-            404
-          );
-
-        }
-
-        const fields = [];
-        const values = [];
-
-        let normalizedSegments = null;
-
-        if(Array.isArray(body.segments)){
-          normalizedSegments = body.segments
-            .map(item => ({
-              segment: clean(item?.segment),
-              quantity: num(item?.quantity)
-            }))
-            .filter(item => item.segment && item.quantity > 0);
-
-          if(!normalizedSegments.length){
-            return json({
-              error:"At least one segment must have a quantity greater than 0."
-            },400);
-          }
-
-          fields.push("segments_json=?");
-          values.push(JSON.stringify(normalizedSegments));
-
-          fields.push("segment=?");
-          values.push(normalizedSegments.map(item => item.segment).join(", "));
-
-          fields.push("quantity=?");
-          values.push(
-            normalizedSegments.reduce(
-              (total, item) => total + item.quantity,
-              0
-            )
-          );
-        }
-
-        const allowed = [
-          "school_name",
-          "contact_person",
-          "designation",
-          "phone",
-          "email",
-          "city",
-          "segment",
-          "students",
-          "notebooks_per_student",
-          "quantity",
-          "custom_cover",
-          "custom_content",
-          "delivery_date",
-          "notes",
-          "status",
-          "po_number",
-          "invoice_due_date",
-          "invoice_notes"
-        ];
-
-        const pricing = [
-          "notebook_rate",
-          "cover_charge",
-          "content_charge",
-          "gst_percent",
-          "quotation_validity",
-          "payment_terms",
-          "bank_details"
-        ];
-
-        for(
-          const field of [
-            ...allowed,
-            ...pricing
-          ]
-        ){
-
-          if(
-            normalizedSegments &&
-            (field === "segment" || field === "quantity")
-          ){
-            continue;
-          }
-
-          if(body[field] !== undefined){
-
-            fields.push(
-              `${field}=?`
+        const response =
+            await fetch(
+                CIK_AI_WORKER,
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body:
+                    JSON.stringify({
+                        message:message
+                    })
+                }
             );
 
-            values.push(
-              body[field]
+        const data =
+            await response.json();
+
+        loadingMessage.remove();
+
+        if(data.answer){
+
+            cikAddMessage(
+                data.answer,
+                "bot"
             );
 
-          }
+        }else{
+
+            cikAddMessage(
+                "Sorry, I couldn't get an answer right now. Please try again.",
+                "bot"
+            );
 
         }
 
-        const merged = {
-          ...current,
-          ...body,
-          ...(normalizedSegments
-            ? {
-                segments_json: JSON.stringify(normalizedSegments),
-                segment: normalizedSegments.map(item => item.segment).join(", "),
-                quantity: normalizedSegments.reduce(
-                  (total, item) => total + item.quantity,
-                  0
-                )
-              }
-            : {})
-        };
+    }catch(error){
 
-        const quotationNeeded =
-          body.status === "Quotation Sent" ||
-          body.notebook_rate !== undefined ||
-          body.cover_charge !== undefined ||
-          body.content_charge !== undefined ||
-          body.gst_percent !== undefined;
-
-        if(quotationNeeded){
-
-          fields.push(
-            "quotation_number=?"
-          );
-
-          values.push(
-            current.quotation_number ||
-            quoteNo(id)
-          );
-
-          fields.push(
-            "quotation_date=?"
-          );
-
-          values.push(
-            current.quotation_date ||
-            new Date().toISOString()
-          );
-
-          fields.push(
-            "quotation_amount=?"
-          );
-
-          values.push(
-            calculation(merged).total
-          );
-
-        }
-
-        if(
-          body.status === "Invoice Generated" &&
-          !current.invoice_number
-        ){
-
-          fields.push(
-            "invoice_number=?"
-          );
-
-          values.push(
-            invoiceNo(id)
-          );
-
-          fields.push(
-            "invoice_generated_at=?"
-          );
-
-          values.push(
-            new Date().toISOString()
-          );
-
-        }
-
-        if(
-          body.status === "Quotation Approved" &&
-          !current.quotation_approved_at
-        ){
-
-          fields.push(
-            "quotation_approved_at=?"
-          );
-
-          values.push(
-            new Date().toISOString()
-          );
-
-        }
-
-        if(!fields.length){
-
-          return json({
-            success:true,
-            requirement:current
-          });
-
-        }
-
-        fields.push(
-          "updated_at=CURRENT_TIMESTAMP"
+        console.error(
+            "CikNotebooks AI Error:",
+            error
         );
 
-        values.push(id);
+        loadingMessage.remove();
 
-        await env.DB
-          .prepare(`
-            UPDATE school_requirements
-            SET ${fields.join(",")}
-            WHERE id=?
-          `)
-          .bind(...values)
-          .run();
-
-        const updated =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements WHERE id=?"
-            )
-            .bind(id)
-            .first();
-
-        return json({
-          success:true,
-          requirement:updated
-        });
-
-      }
-
-      /* ADMIN QUOTATION */
-
-      const quoteMatch =
-        path.match(
-          /^\/api\/admin\/quotation\/(\d+)$/
+        cikAddMessage(
+            "I'm having trouble connecting right now. Please try again in a moment.",
+            "bot"
         );
 
-      if(
-        quoteMatch &&
-        request.method === "GET"
-      ){
+    }finally{
 
-        const id =
-          Number(quoteMatch[1]);
+        cikAiSend.disabled = false;
 
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements WHERE id=?"
-            )
-            .bind(id)
-            .first();
-
-        if(!row){
-
-          return new Response(
-            "Quotation not found.",
-            {
-              status:404,
-              headers:{
-                "Content-Type":
-                  "text/plain"
-              }
-            }
-          );
-
-        }
-
-        return html(
-          quotationPage(row)
-        );
-
-      }
-
-      /* ADMIN INVOICE */
-
-      const invoiceMatch =
-        path.match(
-          /^\/api\/admin\/invoice\/(\d+)$/
-        );
-
-      if(
-        invoiceMatch &&
-        request.method === "GET"
-      ){
-
-        const id =
-          Number(invoiceMatch[1]);
-
-        const row =
-          await env.DB
-            .prepare(
-              "SELECT * FROM school_requirements WHERE id=?"
-            )
-            .bind(id)
-            .first();
-
-        if(!row){
-
-          return new Response(
-            "Invoice not found.",
-            {
-              status:404,
-              headers:{
-                "Content-Type":
-                  "text/plain"
-              }
-            }
-          );
-
-        }
-
-        return html(
-          invoicePage(row)
-        );
-
-      }
-
-      /* ROOT */
-
-      if(path === "/"){
-
-        return new Response(
-          "CikNotebooks B2B Worker is running.",
-          {
-            headers:{
-              "Content-Type":
-                "text/plain"
-            }
-          }
-        );
-
-      }
-
-      return json(
-        {
-          error:"Route not found."
-        },
-        404
-      );
+        cikAiInput.focus();
 
     }
-    catch(error){
+}
 
-      console.error(error);
 
-      return json(
-        {
-          error:
-            error?.message ||
-            "Internal Server Error"
-        },
-        500
-      );
+/* SEND BUTTON */
+cikAiSend.addEventListener(
+    "click",
+    cikSendMessage
+);
+
+
+/* ENTER KEY */
+cikAiInput.addEventListener(
+    "keydown",
+    function(event){
+
+        if(event.key === "Enter"){
+
+            event.preventDefault();
+
+            cikSendMessage();
+
+        }
 
     }
+);
 
-  }
 
-};
+/* SUGGESTION BUTTONS */
+function cikAskSuggestion(question){
+
+    cikAiInput.value =
+        question;
+
+    cikSendMessage();
+
+}
+</script>
+
+</body>
+</html>
