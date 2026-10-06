@@ -67,8 +67,6 @@ padding:10px 15px;
 border-radius:8px
 }
 
-.nav-portal:hover{background:#f5f8fd}
-
 .mobile-menu-btn{
 display:none;
 width:44px;
@@ -97,10 +95,7 @@ font-size:14px
 
 .mobile-menu.active{display:block}
 
-
-/* =====================================================
-   HERO
-   ===================================================== */
+/* HERO */
 
 .hero{
 background:
@@ -224,10 +219,7 @@ color:#102a56
 .fc1{top:45px;right:0}
 .fc2{bottom:45px;left:0}
 
-
-/* =====================================================
-   GENERAL SECTIONS
-   ===================================================== */
+/* GENERAL */
 
 section{padding:90px 0}
 
@@ -247,163 +239,6 @@ margin-bottom:16px
 color:#626c80;
 font-size:17px
 }
-
-
-/* =====================================================
-   NEW OUR AIM SECTION
-   ===================================================== */
-
-.aim-section{
-background:#f2f9ff;
-border-radius:24px;
-padding:34px 44px 28px;
-box-shadow:0 8px 30px rgba(16,42,86,.04)
-}
-
-.aim-grid{
-display:grid;
-grid-template-columns:1.08fr .92fr;
-gap:35px;
-align-items:center
-}
-
-.aim-heading{
-display:flex;
-align-items:center;
-gap:18px;
-margin-bottom:22px
-}
-
-.aim-icon{
-width:64px;
-height:64px;
-border-radius:50%;
-background:#fff3cf;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:34px;
-flex-shrink:0
-}
-
-.aim-heading h2{
-font-size:42px;
-line-height:1.1;
-color:#102a56;
-margin:0
-}
-
-.aim-underline{
-width:58px;
-height:3px;
-background:#f5b400;
-margin-top:12px
-}
-
-.aim-main-text{
-font-size:26px;
-line-height:1.35;
-font-weight:800;
-color:#102a56;
-margin-bottom:20px
-}
-
-.aim-main-text .gold{
-color:#f0a900
-}
-
-.aim-description{
-color:#315783;
-font-size:17px;
-line-height:1.75;
-margin-bottom:18px
-}
-
-.aim-description strong{
-color:#102a56
-}
-
-.aim-quote{
-margin-top:25px;
-background:#fff7df;
-border-radius:40px;
-padding:17px 25px;
-display:flex;
-align-items:center;
-gap:18px;
-color:#102a56;
-font-size:16px;
-font-weight:700
-}
-
-.aim-quote-icon{
-font-size:34px;
-color:#f0ae00;
-flex-shrink:0
-}
-
-.aim-quote-line{
-width:2px;
-height:48px;
-background:#f0ae00;
-flex-shrink:0
-}
-
-.aim-visual{
-display:flex;
-align-items:center;
-justify-content:center
-}
-
-.aim-visual img{
-width:100%;
-max-width:560px;
-height:auto;
-object-fit:contain
-}
-
-.founder-row{
-border-top:1px solid #dce8f4;
-margin-top:28px;
-padding-top:26px;
-display:flex;
-align-items:center;
-gap:20px
-}
-
-.founder-icon{
-width:64px;
-height:64px;
-border-radius:50%;
-background:#dcecfb;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:30px;
-flex-shrink:0
-}
-
-.founder-content{
-border-left:3px solid #f0ae00;
-padding-left:20px
-}
-
-.founder-content h3{
-color:#102a56;
-font-size:21px;
-margin-bottom:4px
-}
-
-.founder-content p{
-color:#315783;
-font-size:14px;
-line-height:1.55
-}
-
-
-/* =====================================================
-   CARDS
-   ===================================================== */
 
 .cards{
 display:grid;
@@ -447,13 +282,335 @@ color:#687287;
 font-size:15px
 }
 
-
 /* =====================================================
-   PHILOSOPHY
+   NEW OUR AIM SECTION
    ===================================================== */
 
-.philosophy,
-.school{
+.our-aim{
+background:linear-gradient(135deg,#f6fbff 0%,#eef7ff 100%);
+padding:35px 0 0
+}
+
+.aim-box{
+background:
+linear-gradient(135deg,rgba(255,255,255,.72),rgba(239,248,255,.92));
+border:1px solid #e3edf7;
+border-radius:22px;
+padding:42px;
+overflow:hidden;
+box-shadow:0 15px 45px rgba(16,42,86,.06)
+}
+
+.aim-grid{
+display:grid;
+grid-template-columns:1.12fr .88fr;
+gap:30px;
+align-items:center
+}
+
+.aim-title{
+display:flex;
+align-items:center;
+gap:18px;
+margin-bottom:22px
+}
+
+.aim-light{
+width:58px;
+height:58px;
+border-radius:50%;
+background:#fff4d2;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:30px;
+flex-shrink:0
+}
+
+.aim-title h2{
+font-size:42px;
+line-height:1;
+color:#102a56
+}
+
+.aim-title-line{
+width:60px;
+height:3px;
+background:#f5b400;
+margin-top:10px
+}
+
+.aim-main{
+font-size:25px;
+font-weight:800;
+line-height:1.35;
+color:#102a56;
+margin-bottom:18px
+}
+
+.aim-main span{color:#e5a400}
+
+.aim-text{
+font-size:17px;
+color:#52627b;
+margin-bottom:20px;
+max-width:680px
+}
+
+.aim-values{
+font-size:17px;
+color:#102a56;
+font-weight:700
+}
+
+.aim-values span{font-weight:900}
+
+.aim-quote{
+margin-top:25px;
+background:#fff6db;
+border-radius:18px;
+padding:20px 22px;
+display:flex;
+align-items:center;
+gap:18px;
+max-width:690px
+}
+
+.quote-icon{
+font-size:30px;
+color:#e5a400;
+flex-shrink:0
+}
+
+.aim-quote p{
+font-size:17px;
+font-weight:800;
+color:#19345e
+}
+
+/* AIM ILLUSTRATION */
+
+.aim-visual{
+min-height:390px;
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center
+}
+
+.aim-student{
+position:relative;
+width:330px;
+height:330px
+}
+
+.aim-glow{
+position:absolute;
+width:280px;
+height:280px;
+border-radius:50%;
+background:#eaf6ff;
+left:25px;
+top:35px
+}
+
+.aim-person{
+position:absolute;
+left:92px;
+top:95px;
+width:145px;
+height:150px;
+z-index:3
+}
+
+.head{
+width:82px;
+height:82px;
+background:#f2b47f;
+border-radius:50%;
+margin:auto;
+position:relative;
+border:4px solid #172c50
+}
+
+.hair{
+position:absolute;
+top:-8px;
+left:4px;
+width:74px;
+height:38px;
+background:#17233d;
+border-radius:50% 50% 30% 30%
+}
+
+.eye{
+position:absolute;
+width:7px;
+height:7px;
+background:#17233d;
+border-radius:50%;
+top:40px
+}
+
+.eye.left{left:22px}
+.eye.right{right:22px}
+
+.body{
+position:absolute;
+top:74px;
+left:20px;
+width:105px;
+height:110px;
+background:#102a56;
+border-radius:42px 42px 15px 15px
+}
+
+.shirt{
+position:absolute;
+top:87px;
+left:43px;
+width:60px;
+height:75px;
+background:#fff;
+z-index:4;
+clip-path:polygon(20% 0,80% 0,100% 100%,0 100%)
+}
+
+.arm{
+position:absolute;
+width:90px;
+height:18px;
+background:#f2b47f;
+border-radius:20px;
+top:112px;
+z-index:5;
+transform:rotate(-20deg);
+left:-22px
+}
+
+.book{
+position:absolute;
+width:210px;
+height:48px;
+background:#fff;
+border:4px solid #102a56;
+border-radius:7px;
+bottom:35px;
+left:60px;
+z-index:6;
+box-shadow:0 8px 0 #dfe8f3
+}
+
+.book-line{
+position:absolute;
+left:15px;
+right:15px;
+top:13px;
+height:2px;
+background:#cfd9e8;
+box-shadow:0 10px #cfd9e8
+}
+
+.aim-pills{
+position:absolute;
+z-index:8;
+display:flex;
+flex-direction:column;
+gap:7px
+}
+
+.aim-pill{
+padding:7px 12px;
+border-radius:7px;
+font-size:11px;
+font-weight:900;
+color:#fff;
+box-shadow:0 4px 10px rgba(0,0,0,.08)
+}
+
+.pill-blue{background:#1260aa}
+.pill-orange{background:#ee8e24}
+.pill-green{background:#48a66a}
+.pill-purple{background:#7851a9}
+
+.pills-left{
+left:0;
+bottom:72px
+}
+
+.aim-cycle{
+position:absolute;
+top:0;
+right:-5px;
+width:230px;
+height:230px
+}
+
+.cycle-item{
+position:absolute;
+font-size:12px;
+font-weight:900;
+color:#102a56;
+text-align:center
+}
+
+.cycle-item .cycle-icon{
+font-size:27px;
+display:block;
+margin-bottom:2px
+}
+
+.cycle-q{left:5px;top:80px}
+.cycle-explore{left:78px;top:5px}
+.cycle-solve{right:0;top:78px}
+.cycle-create{right:8px;bottom:20px}
+.cycle-grow{left:78px;bottom:0}
+.cycle-think{left:0;bottom:20px}
+
+.cycle-line{
+position:absolute;
+inset:34px;
+border:2px dashed #c5dced;
+border-radius:50%
+}
+
+/* FOUNDER */
+
+.founder-row{
+margin-top:30px;
+padding-top:25px;
+border-top:1px solid #dce7f1;
+display:flex;
+align-items:center;
+gap:18px
+}
+
+.founder-icon{
+width:58px;
+height:58px;
+border-radius:50%;
+background:#e7f2fc;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:27px;
+flex-shrink:0
+}
+
+.founder-row h3{
+color:#102a56;
+font-size:20px;
+margin-bottom:4px
+}
+
+.founder-row p{
+color:#5d6b80;
+font-size:14px
+}
+
+/* PHILOSOPHY */
+
+.philosophy,.school{
 background:#f6f8fc
 }
 
@@ -477,14 +634,9 @@ color:#102a56;
 margin-bottom:7px
 }
 
-.framework-card small{
-color:#687287
-}
+.framework-card small{color:#687287}
 
-
-/* =====================================================
-   SEGMENTS
-   ===================================================== */
+/* SEGMENTS */
 
 .segments{
 background:#102a56;
@@ -525,10 +677,7 @@ color:#d8e0ee;
 font-size:14px
 }
 
-
-/* =====================================================
-   TOPICS
-   ===================================================== */
+/* TOPICS */
 
 .topic-grid{
 display:grid;
@@ -543,9 +692,7 @@ padding:20px;
 background:#fff
 }
 
-.topic strong{
-color:#102a56
-}
+.topic strong{color:#102a56}
 
 .topic span{
 display:block;
@@ -554,10 +701,7 @@ margin-top:6px;
 font-size:14px
 }
 
-
-/* =====================================================
-   SCHOOLS
-   ===================================================== */
+/* SCHOOL */
 
 .school-grid{
 display:grid;
@@ -593,10 +737,7 @@ border:1px solid #e4e8ef;
 box-shadow:0 20px 40px rgba(16,42,86,.08)
 }
 
-
-/* =====================================================
-   B2B SCHOOL REQUIREMENT SYSTEM
-   ===================================================== */
+/* B2B */
 
 .school-request{
 background:linear-gradient(135deg,#f7faff 0%,#eef4ff 100%)
@@ -668,10 +809,6 @@ margin-bottom:6px
 .form-group select,
 .form-group textarea{
 margin-bottom:0
-}
-
-.form-group.full{
-grid-column:1/-1
 }
 
 .segment-selection-box{
@@ -752,9 +889,7 @@ font-size:20px;
 color:#ffd25b
 }
 
-.requirement-form textarea{
-min-height:120px
-}
+.requirement-form textarea{min-height:120px}
 
 .checkbox-row{
 display:flex;
@@ -777,11 +912,6 @@ color:#fff
 
 .requirement-submit:hover{
 background:#173d76
-}
-
-.requirement-submit:disabled{
-opacity:.65;
-cursor:wait
 }
 
 .requirement-aside{
@@ -843,9 +973,7 @@ border-radius:15px;
 padding:24px
 }
 
-.trust-card h3{
-margin-bottom:10px
-}
+.trust-card h3{margin-bottom:10px}
 
 .trust-card p{
 color:#dce5f3;
@@ -861,9 +989,7 @@ border-radius:14px;
 padding:22px
 }
 
-.request-success.active{
-display:block
-}
+.request-success.active{display:block}
 
 .request-error{
 display:none;
@@ -876,9 +1002,7 @@ padding:12px;
 font-size:13px
 }
 
-.request-error.active{
-display:block
-}
+.request-error.active{display:block}
 
 .success-portal{
 background:#102a56;
@@ -896,6 +1020,11 @@ margin-top:14px;
 color:#526176;
 font-size:13px;
 line-height:1.6
+}
+
+.requirement-submit:disabled{
+opacity:.65;
+cursor:wait
 }
 
 .success-id{
@@ -948,10 +1077,7 @@ font-size:13px;
 white-space:pre-line
 }
 
-
-/* =====================================================
-   IMPACT
-   ===================================================== */
+/* IMPACT */
 
 .impact{
 background:#fffaf0
@@ -981,10 +1107,7 @@ font-size:14px;
 color:#687287
 }
 
-
-/* =====================================================
-   CONTACT
-   ===================================================== */
+/* CONTACT */
 
 .contact{
 background:#102a56;
@@ -1002,9 +1125,7 @@ font-size:45px;
 margin-bottom:18px
 }
 
-.contact p{
-color:#dbe3f0
-}
+.contact p{color:#dbe3f0}
 
 .contact-details{
 margin-top:28px;
@@ -1012,13 +1133,9 @@ display:grid;
 gap:12px
 }
 
-.contact-details a{
-color:#fff
-}
+.contact-details a{color:#fff}
 
-.contact-details a:hover{
-color:#ffd25b
-}
+.contact-details a:hover{color:#ffd25b}
 
 form{
 background:#fff;
@@ -1026,9 +1143,7 @@ padding:30px;
 border-radius:14px
 }
 
-input,
-select,
-textarea{
+input,select,textarea{
 width:100%;
 padding:13px;
 margin-bottom:13px;
@@ -1055,10 +1170,7 @@ font-weight:800;
 font-size:15px
 }
 
-
-/* =====================================================
-   FOOTER
-   ===================================================== */
+/* FOOTER */
 
 footer{
 background:#091b38;
@@ -1073,27 +1185,18 @@ gap:40px;
 margin-bottom:35px
 }
 
-footer h3{
-margin-bottom:14px
-}
+footer h3{margin-bottom:14px}
 
-footer p,
-footer li{
+footer p,footer li{
 color:#bfc9da;
 font-size:14px
 }
 
-footer ul{
-list-style:none
-}
+footer ul{list-style:none}
 
-footer li{
-margin:8px 0
-}
+footer li{margin:8px 0}
 
-footer a:hover{
-color:#ffd25b
-}
+footer a:hover{color:#ffd25b}
 
 .copyright{
 border-top:1px solid rgba(255,255,255,.12);
@@ -1103,10 +1206,7 @@ color:#aeb9cc;
 font-size:13px
 }
 
-
-/* =====================================================
-   WHATSAPP
-   ===================================================== */
+/* WHATSAPP */
 
 .whatsapp{
 position:fixed;
@@ -1125,9 +1225,8 @@ font-size:25px;
 box-shadow:0 8px 25px rgba(0,0,0,.2)
 }
 
-
 /* =====================================================
-   CIKNOTEBOOKS AI ASSISTANT
+   CIKNOTEBOOKS AI ASSISTANT + VOICE
    ===================================================== */
 
 .cik-ai-button{
@@ -1160,9 +1259,9 @@ box-shadow:0 14px 35px rgba(16,42,86,.35)
 position:fixed;
 right:22px;
 bottom:158px;
-width:370px;
+width:390px;
 max-width:calc(100vw - 30px);
-height:540px;
+height:580px;
 max-height:calc(100vh - 190px);
 background:#fff;
 border-radius:18px;
@@ -1174,9 +1273,7 @@ flex-direction:column;
 overflow:hidden
 }
 
-.cik-ai-chat.active{
-display:flex
-}
+.cik-ai-chat.active{display:flex}
 
 .cik-ai-header{
 background:#102a56;
@@ -1307,70 +1404,75 @@ margin:3px
 background:#f2f5fa
 }
 
+/* VOICE CONTROLS */
 
-/* =====================================================
-   RESPONSIVE
-   ===================================================== */
+.cik-ai-voice-bar{
+display:flex;
+gap:7px;
+padding:10px 12px;
+border-top:1px solid #edf0f5;
+background:#fff;
+flex-wrap:wrap
+}
+
+.cik-ai-voice-btn{
+width:auto;
+padding:8px 11px;
+border-radius:18px;
+font-size:11px;
+font-weight:800;
+background:#f4f7fb;
+color:#102a56;
+border:1px solid #dce3ee
+}
+
+.cik-ai-voice-btn:hover{
+background:#eaf0f8
+}
+
+.cik-ai-voice-btn.active{
+background:#102a56;
+color:#fff
+}
+
+.voice-status{
+width:100%;
+font-size:11px;
+color:#69758a;
+min-height:16px
+}
+
+/* MOBILE */
 
 @media(max-width:900px){
 
 .nav-links{display:none}
-
 .mobile-menu-btn{display:block}
 
 .hero-grid,
 .school-grid,
 .contact-grid,
-.requirement-grid{
+.requirement-grid,
+.aim-grid{
 grid-template-columns:1fr
 }
 
-.cards{
-grid-template-columns:1fr 1fr
-}
-
-.segment-grid{
-grid-template-columns:1fr 1fr
-}
-
-.topic-grid{
-grid-template-columns:1fr 1fr
-}
-
-.framework{
-grid-template-columns:repeat(3,1fr)
-}
-
-.impact-grid{
-grid-template-columns:1fr 1fr
-}
+.cards{grid-template-columns:1fr 1fr}
+.segment-grid{grid-template-columns:1fr 1fr}
+.topic-grid{grid-template-columns:1fr 1fr}
+.framework{grid-template-columns:repeat(3,1fr)}
+.impact-grid{grid-template-columns:1fr 1fr}
 
 .footer-grid{
 grid-template-columns:1fr 1fr
 }
 
-.aim-section{
-padding:28px 24px
-}
-
-.aim-grid{
-grid-template-columns:1fr
-}
-
 .aim-visual{
-order:-1
-}
-
-.aim-heading h2{
-font-size:36px
-}
-
-.aim-main-text{
-font-size:23px
+min-height:360px;
+margin-top:10px
 }
 
 }
-
 
 @media(max-width:600px){
 
@@ -1378,25 +1480,15 @@ font-size:23px
 grid-template-columns:1fr 110px
 }
 
-section{
-padding:65px 0
-}
+section{padding:65px 0}
 
-.hero{
-padding:70px 0
-}
+.hero{padding:70px 0}
 
-h1{
-font-size:43px
-}
+h1{font-size:43px}
 
-.hero p{
-font-size:17px
-}
+.hero p{font-size:17px}
 
-.hero-visual{
-min-height:390px
-}
+.hero-visual{min-height:390px}
 
 .notebook{
 width:245px;
@@ -1412,17 +1504,11 @@ height:330px
 grid-template-columns:1fr
 }
 
-.contact h2{
-font-size:35px
-}
+.contact h2{font-size:35px}
 
-.form-row{
-grid-template-columns:1fr
-}
+.form-row{grid-template-columns:1fr}
 
-.requirement-form{
-padding:22px
-}
+.requirement-form{padding:22px}
 
 .cik-ai-button{
 right:15px;
@@ -1435,58 +1521,27 @@ padding:12px 15px
 right:10px;
 bottom:145px;
 width:calc(100vw - 20px);
-height:500px
+height:520px
 }
 
-.aim-section{
-padding:24px 18px;
-border-radius:18px
+.aim-box{
+padding:25px 18px
 }
 
-.aim-heading{
-gap:12px
+.aim-title h2{
+font-size:34px
 }
 
-.aim-icon{
-width:54px;
-height:54px;
-font-size:28px
+.aim-main{
+font-size:21px
 }
 
-.aim-heading h2{
-font-size:31px
-}
-
-.aim-main-text{
-font-size:20px
-}
-
-.aim-description{
+.aim-text{
 font-size:15px
 }
 
-.aim-quote{
-border-radius:18px;
-padding:15px;
-font-size:14px
-}
-
-.founder-row{
-align-items:flex-start
-}
-
-.founder-icon{
-width:52px;
-height:52px;
-font-size:24px
-}
-
-.founder-content{
-padding-left:14px
-}
-
-.founder-content h3{
-font-size:18px
+.aim-student{
+transform:scale(.86)
 }
 
 }
@@ -1499,7 +1554,9 @@ font-size:18px
 
 <div class="container nav">
 
-<a href="#" class="logo">Cik<span>Notebooks</span></a>
+<a href="#" class="logo">
+Cik<span>Notebooks</span>
+</a>
 
 <ul class="nav-links">
 
@@ -1510,7 +1567,8 @@ font-size:18px
 <li><a href="#school-request">Request Quote</a></li>
 
 <li>
-<a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal"
+<a
+href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal"
 target="_blank"
 class="nav-portal">
 School Portal
@@ -1534,7 +1592,6 @@ aria-expanded="false">
 </button>
 
 </div>
-
 
 <div class="mobile-menu" id="mobileMenu">
 
@@ -1576,9 +1633,7 @@ Every Notebook Can Teach Something.
 </h1>
 
 <p>
-CikNotebooks combines school subjects, real-world knowledge and future skills
-inside everyday notebooks — creating awareness, curiosity and a habit of
-thinking beyond textbooks.
+CikNotebooks combines school subjects, real-world knowledge and future skills inside everyday notebooks — creating awareness, curiosity and a habit of thinking beyond textbooks.
 </p>
 
 <div class="tagline">
@@ -1662,96 +1717,70 @@ Learn Think Solve Create Grow
 
 
 <!-- =====================================================
-     NEW OUR AIM SECTION
+     OUR AIM — NEW SECTION
      ===================================================== -->
 
-<section id="about">
+<section class="our-aim" id="our-aim">
 
 <div class="container">
 
-<div class="aim-section">
+<div class="aim-box">
 
 <div class="aim-grid">
 
+<div>
 
-<div class="aim-content">
+<div class="aim-title">
 
-<div class="aim-heading">
-
-<div class="aim-icon">
+<div class="aim-light">
 💡
 </div>
 
 <div>
 
-<h2>
-Our Aim
-</h2>
+<h2>Our Aim</h2>
 
-<div class="aim-underline"></div>
+<div class="aim-title-line"></div>
 
 </div>
 
 </div>
 
 
-<div class="aim-main-text">
+<div class="aim-main">
 
-To create
-<span class="gold">awareness</span>,
-spark curiosity, and build a
-<span class="gold">future-ready mindset</span>
-in students.
+To create <span>awareness</span>,
+spark <span>curiosity</span>, and build a
+<span>future-ready mindset</span> in students.
 
 </div>
 
 
-<p class="aim-description">
+<p class="aim-text">
 
-CikNotebooks goes beyond traditional textbook learning by introducing
-students to new ideas, real-world knowledge, emerging technologies,
-life skills, and future opportunities.
+CikNotebooks goes beyond traditional textbook learning by introducing students to new ideas, real-world knowledge, emerging technologies, life skills, and future opportunities.
 
 </p>
 
 
-<p class="aim-description">
+<p class="aim-text">
 
 Our aim is to encourage students to
-<strong>
-think, question, explore, solve, create, and grow
-</strong>
-—so they are better prepared for a rapidly changing world.
+<strong>think, question, explore, solve, create, and grow</strong> —
+so they are better prepared for a rapidly changing world.
 
 </p>
 
 
 <div class="aim-quote">
 
-<div class="aim-quote-icon">
+<div class="quote-icon">
 🎯
 </div>
 
-<div class="aim-quote-line"></div>
-
-<div>
-“Because learning should not only prepare students
-for exams, but also for the future.”
-</div>
-
-</div>
-
-</div>
-
-
-<div class="aim-visual">
-
-<img
-src="our-aim-illustration.png"
-alt="CikNotebooks student learning, thinking, exploring and creating">
-
-</div>
-
+<p>
+“Because learning should not only prepare students for exams, but also for the future.”
+</p>
 
 </div>
 
@@ -1762,21 +1791,121 @@ alt="CikNotebooks student learning, thinking, exploring and creating">
 👤
 </div>
 
-<div class="founder-content">
+<div>
 
 <h3>
 Founded by Abhishek Kumar
 </h3>
 
 <p>
-CikNotebooks is an education innovation initiative where an everyday notebook
-becomes an additional learning interface.
+CikNotebooks is an education innovation initiative where an everyday notebook becomes an additional learning interface.
 </p>
 
 </div>
 
 </div>
 
+</div>
+
+
+<!-- ILLUSTRATION -->
+
+<div class="aim-visual">
+
+<div class="aim-student">
+
+<div class="aim-glow"></div>
+
+<div class="cycle-line"></div>
+
+
+<div class="aim-cycle">
+
+<div class="cycle-item cycle-q">
+<span class="cycle-icon">🧠</span>
+QUESTION
+</div>
+
+<div class="cycle-item cycle-explore">
+<span class="cycle-icon">🔎</span>
+EXPLORE
+</div>
+
+<div class="cycle-item cycle-solve">
+<span class="cycle-icon">⚙️</span>
+SOLVE
+</div>
+
+<div class="cycle-item cycle-create">
+<span class="cycle-icon">🚀</span>
+CREATE
+</div>
+
+<div class="cycle-item cycle-grow">
+<span class="cycle-icon">📈</span>
+GROW
+</div>
+
+<div class="cycle-item cycle-think">
+<span class="cycle-icon">💡</span>
+THINK
+</div>
+
+</div>
+
+
+<div class="aim-person">
+
+<div class="head">
+
+<div class="hair"></div>
+
+<div class="eye left"></div>
+<div class="eye right"></div>
+
+</div>
+
+<div class="body"></div>
+
+<div class="shirt"></div>
+
+<div class="arm"></div>
+
+</div>
+
+
+<div class="book">
+
+<div class="book-line"></div>
+
+</div>
+
+
+<div class="aim-pills pills-left">
+
+<div class="aim-pill pill-blue">
+SCIENCE &amp; TECH
+</div>
+
+<div class="aim-pill pill-orange">
+INNOVATION
+</div>
+
+<div class="aim-pill pill-green">
+LIFE SKILLS
+</div>
+
+<div class="aim-pill pill-purple">
+FUTURE
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </div>
 
@@ -1786,7 +1915,85 @@ becomes an additional learning interface.
 
 
 <!-- =====================================================
-     PHILOSOPHY
+     WHY CIKNOTEBOOKS — PRESERVED
+     ===================================================== -->
+
+<section id="about">
+
+<div class="container">
+
+<div class="section-head">
+
+<div class="eyebrow">
+Why CikNotebooks?
+</div>
+
+<h2>
+Turning everyday notebook pages into learning opportunities.
+</h2>
+
+<p>
+Traditional notebooks are mostly blank pages used for writing. CikNotebooks adds another layer — curated knowledge, questions, examples, activities and future-oriented ideas.
+</p>
+
+</div>
+
+
+<div class="cards">
+
+<div class="card">
+
+<div class="icon">💡</div>
+
+<h3>
+Content-Infused Knowledge
+</h3>
+
+<p>
+Students encounter useful knowledge while using the notebook they already carry to school every day.
+</p>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">🔎</div>
+
+<h3>
+Awareness &amp; Curiosity
+</h3>
+
+<p>
+CikNotebooks encourages students to notice, question, explore and understand the world around them.
+</p>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">🚀</div>
+
+<h3>
+Future-Ready Learning
+</h3>
+
+<p>
+AI, technology, entrepreneurship, financial literacy, innovation, life skills and more are introduced progressively.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     LEARNING PHILOSOPHY
      ===================================================== -->
 
 <section class="philosophy">
@@ -1804,8 +2011,7 @@ Knowledge should lead to thinking and action.
 </h2>
 
 <p>
-CikNotebooks is designed around curiosity, critical thinking,
-hands-on exploration, problem solving, creativity and real-world application.
+CikNotebooks is designed around curiosity, critical thinking, hands-on exploration, problem solving, creativity and real-world application.
 </p>
 
 </div>
@@ -1815,12 +2021,12 @@ hands-on exploration, problem solving, creativity and real-world application.
 
 <div class="framework-card">
 <strong>KNOW</strong>
-<small>World & future knowledge</small>
+<small>World &amp; future knowledge</small>
 </div>
 
 <div class="framework-card">
 <strong>THINK</strong>
-<small>Questions & decisions</small>
+<small>Questions &amp; decisions</small>
 </div>
 
 <div class="framework-card">
@@ -1830,12 +2036,12 @@ hands-on exploration, problem solving, creativity and real-world application.
 
 <div class="framework-card">
 <strong>CREATE</strong>
-<small>Projects & challenges</small>
+<small>Projects &amp; challenges</small>
 </div>
 
 <div class="framework-card">
 <strong>EXPLORE</strong>
-<small>Careers & opportunities</small>
+<small>Careers &amp; opportunities</small>
 </div>
 
 <div class="framework-card">
@@ -1888,8 +2094,7 @@ Classes 1–3
 </h3>
 
 <p>
-Ages 6–8. Curiosity, observation, imagination, simple real-world awareness
-and healthy habits.
+Ages 6–8. Curiosity, observation, imagination, simple real-world awareness and healthy habits.
 </p>
 
 </div>
@@ -1906,8 +2111,7 @@ Classes 4–6
 </h3>
 
 <p>
-Ages 9–11. Awareness, simple logic, digital literacy, money basics,
-communication and exploration.
+Ages 9–11. Awareness, simple logic, digital literacy, money basics, communication and exploration.
 </p>
 
 </div>
@@ -1924,8 +2128,7 @@ Classes 7–9
 </h3>
 
 <p>
-Ages 12–14. Analysis, decision-making, AI, finance, entrepreneurship,
-cybersecurity and real-world problems.
+Ages 12–14. Analysis, decision-making, AI, finance, entrepreneurship, cybersecurity and real-world problems.
 </p>
 
 </div>
@@ -1942,8 +2145,7 @@ Classes 10–12
 </h3>
 
 <p>
-Ages 15–17. Strategy, advanced technology, careers, personal finance,
-startups and future opportunities.
+Ages 15–17. Strategy, advanced technology, careers, personal finance, startups and future opportunities.
 </p>
 
 </div>
@@ -1974,8 +2176,7 @@ Learning beyond the conventional syllabus.
 </h2>
 
 <p>
-CikNotebooks progressively explores knowledge areas that help students
-understand themselves, society, technology and the future.
+CikNotebooks progressively explores knowledge areas that help students understand themselves, society, technology and the future.
 </p>
 
 </div>
@@ -1984,27 +2185,27 @@ understand themselves, society, technology and the future.
 <div class="topic-grid">
 
 <div class="topic">
-<strong>01. Mindset & Personal Growth</strong>
+<strong>01. Mindset &amp; Personal Growth</strong>
 <span>Curiosity → Growth mindset → Resilience → Self-mastery</span>
 </div>
 
 <div class="topic">
-<strong>02. Critical Thinking & Problem Solving</strong>
+<strong>02. Critical Thinking &amp; Problem Solving</strong>
 <span>Observe → Logic → Analysis → Strategic thinking</span>
 </div>
 
 <div class="topic">
-<strong>03. Creativity & Innovation</strong>
+<strong>03. Creativity &amp; Innovation</strong>
 <span>Imagine → Ideas → Design thinking → Product creation</span>
 </div>
 
 <div class="topic">
 <strong>04. Artificial Intelligence</strong>
-<span>AI awareness → ML & GenAI → Applications & future</span>
+<span>AI awareness → ML &amp; GenAI → Applications &amp; future</span>
 </div>
 
 <div class="topic">
-<strong>05. Technology & Digital World</strong>
+<strong>05. Technology &amp; Digital World</strong>
 <span>Technology → Internet → Cybersecurity → Emerging tech</span>
 </div>
 
@@ -2019,67 +2220,67 @@ understand themselves, society, technology and the future.
 </div>
 
 <div class="topic">
-<strong>08. Marketing & Sales</strong>
+<strong>08. Marketing &amp; Sales</strong>
 <span>Communication → Customers → Branding → Strategy</span>
 </div>
 
 <div class="topic">
-<strong>09. Career & Future of Work</strong>
+<strong>09. Career &amp; Future of Work</strong>
 <span>Jobs → Discovery → Skills → Employability</span>
 </div>
 
 <div class="topic">
-<strong>10. Communication & Soft Skills</strong>
+<strong>10. Communication &amp; Soft Skills</strong>
 <span>Speaking → Storytelling → Collaboration → Leadership</span>
 </div>
 
 <div class="topic">
-<strong>11. Health & Human Well-being</strong>
+<strong>11. Health &amp; Human Well-being</strong>
 <span>Healthy habits → Physiology → Well-being → Performance</span>
 </div>
 
 <div class="topic">
-<strong>12. Environment & Sustainability</strong>
+<strong>12. Environment &amp; Sustainability</strong>
 <span>Nature → Conservation → Climate → Green economy</span>
 </div>
 
 <div class="topic">
-<strong>13. Agriculture & Food System</strong>
+<strong>13. Agriculture &amp; Food System</strong>
 <span>Plants → Farming → Precision agriculture → Agri-tech</span>
 </div>
 
 <div class="topic">
-<strong>14. Science & Emerging Technology</strong>
+<strong>14. Science &amp; Emerging Technology</strong>
 <span>Science → Applications → Emerging technology → Deep tech</span>
 </div>
 
 <div class="topic">
-<strong>15. India & Society</strong>
+<strong>15. India &amp; Society</strong>
 <span>My India → Opportunities → Economy → India 2047</span>
 </div>
 
 <div class="topic">
-<strong>16. World & Global Awareness</strong>
+<strong>16. World &amp; Global Awareness</strong>
 <span>World → Cultures → Global economy → Global opportunities</span>
 </div>
 
 <div class="topic">
-<strong>17. Business, Economy & Industries</strong>
+<strong>17. Business, Economy &amp; Industries</strong>
 <span>Shops → Business → Markets → Economic systems</span>
 </div>
 
 <div class="topic">
-<strong>18. Digital & Personal Safety</strong>
+<strong>18. Digital &amp; Personal Safety</strong>
 <span>Safe habits → Online safety → Cyber risk → Data privacy</span>
 </div>
 
 <div class="topic">
-<strong>19. Society, Ethics & Citizenship</strong>
+<strong>19. Society, Ethics &amp; Citizenship</strong>
 <span>Kindness → Rules → Ethics → Responsible decisions</span>
 </div>
 
 <div class="topic">
-<strong>20. Real-world Challenges & Projects</strong>
+<strong>20. Real-world Challenges &amp; Projects</strong>
 <span>Observe → Explore → Prototype → Execute</span>
 </div>
 
@@ -2089,17 +2290,17 @@ understand themselves, society, technology and the future.
 </div>
 
 <div class="topic">
-<strong>22. Banking & Digital Payments</strong>
+<strong>22. Banking &amp; Digital Payments</strong>
 <span>Bank basics → UPI → Banking → Financial systems</span>
 </div>
 
 <div class="topic">
-<strong>23. Investing & Wealth</strong>
+<strong>23. Investing &amp; Wealth</strong>
 <span>Saving → Investing → Risk → Wealth building</span>
 </div>
 
 <div class="topic">
-<strong>24. Energy & Renewable Energy</strong>
+<strong>24. Energy &amp; Renewable Energy</strong>
 <span>Energy → Renewables → Storage → Energy transition</span>
 </div>
 
@@ -2109,12 +2310,12 @@ understand themselves, society, technology and the future.
 </div>
 
 <div class="topic">
-<strong>26. Famous Personalities & Their Work</strong>
+<strong>26. Famous Personalities &amp; Their Work</strong>
 <span>Ideas, journeys, achievements and lessons</span>
 </div>
 
 <div class="topic">
-<strong>27. Government, Defence & National Service</strong>
+<strong>27. Government, Defence &amp; National Service</strong>
 <span>Government schemes → Public service → National service</span>
 </div>
 
@@ -2154,8 +2355,7 @@ A notebook program designed for your school.
 </h2>
 
 <p style="color:#667085;">
-CikNotebooks can be customised according to the requirements,
-preferences and learning priorities of individual schools.
+CikNotebooks can be customised according to the requirements, preferences and learning priorities of individual schools.
 </p>
 
 <ul class="school-list">
@@ -2179,8 +2379,7 @@ School Partnership
 </h3>
 
 <p style="color:#687287;margin-bottom:20px;">
-From school-specific notebook covers to customised learning content,
-CikNotebooks is designed to work with schools, not simply sell notebooks to them.
+From school-specific notebook covers to customised learning content, CikNotebooks is designed to work with schools, not simply sell notebooks to them.
 </p>
 
 <a href="#school-request" class="btn btn-primary">
@@ -2195,7 +2394,7 @@ Request for Your School
 
 
 <!-- =====================================================
-     SCHOOL REQUEST
+     SCHOOL REQUIREMENT
      ===================================================== -->
 
 <section class="school-request" id="school-request">
@@ -2217,8 +2416,7 @@ Tell us what your school needs.
 </h2>
 
 <p style="color:#626c80;font-size:17px;">
-Submit your school requirement once. Your Requirement ID becomes the reference
-for quotation, approval, production planning and future communication.
+Submit your school requirement once. Your Requirement ID becomes the reference for quotation, approval, production planning and future communication.
 </p>
 
 </div>
@@ -2230,8 +2428,7 @@ for quotation, approval, production planning and future communication.
 <form
 class="requirement-form"
 id="schoolRequirementForm"
-onsubmit="submitSchoolRequirement(event)"
->
+onsubmit="submitSchoolRequirement(event)">
 
 <h3>
 School Requirement Form
@@ -2352,7 +2549,7 @@ required>
 <div class="segment-selection-box">
 
 <label class="segment-selection-title">
-Select Segment(s) & Enter Quantity *
+Select Segment(s) &amp; Enter Quantity *
 </label>
 
 <p class="segment-selection-note">
@@ -2475,7 +2672,6 @@ Total Required Quantity
 
 </div>
 
-
 <input
 type="hidden"
 id="reqQuantity"
@@ -2509,7 +2705,9 @@ placeholder="e.g. 600">
 Notebooks per Student
 </label>
 
-<select id="reqPerStudent" name="notebooks_per_student">
+<select
+id="reqPerStudent"
+name="notebooks_per_student">
 
 <option value="1">
 1 notebook
@@ -2542,15 +2740,12 @@ Notebooks per Student
 Custom School Cover?
 </label>
 
-<select id="reqCover" name="custom_cover">
+<select
+id="reqCover"
+name="custom_cover">
 
-<option value="Yes">
-Yes
-</option>
-
-<option value="No">
-No
-</option>
+<option value="Yes">Yes</option>
+<option value="No">No</option>
 
 </select>
 
@@ -2563,15 +2758,12 @@ No
 Custom Content?
 </label>
 
-<select id="reqContent" name="custom_content">
+<select
+id="reqContent"
+name="custom_content">
 
-<option value="Yes">
-Yes
-</option>
-
-<option value="No">
-No
-</option>
+<option value="Yes">Yes</option>
+<option value="No">No</option>
 
 </select>
 
@@ -2617,8 +2809,7 @@ id="reqConsent"
 required>
 
 <span>
-I confirm that the information provided is for discussing
-CikNotebooks requirements for my school.
+I confirm that the information provided is for discussing CikNotebooks requirements for my school.
 </span>
 
 </label>
@@ -2633,20 +2824,22 @@ Submit School Requirement
 </button>
 
 
-<div class="request-success" id="requestSuccess">
+<div
+class="request-success"
+id="requestSuccess">
 
 <strong style="color:#168044;">
 ✓ School requirement submitted successfully
 </strong>
 
-<div class="success-id" id="successRequirementId">
+<div
+class="success-id"
+id="successRequirementId">
 CIK-2026-00000
 </div>
 
 <p class="success-warning">
-Your requirement has been received by CikNotebooks.
-Keep this Requirement ID and your registered phone number —
-they are used to access the School Portal and quotation.
+Your requirement has been received by CikNotebooks. Keep this Requirement ID and your registered phone number — they are used to access the School Portal and quotation.
 </p>
 
 <div
@@ -2693,8 +2886,7 @@ Create Another Requirement
 <p class="success-next">
 
 <strong>Next:</strong>
-CikNotebooks will review the requirement, prepare the quotation,
-and update its status in the School Portal.
+CikNotebooks will review the requirement, prepare the quotation, and update its status in the School Portal.
 
 </p>
 
@@ -2705,7 +2897,6 @@ and update its status in the School Portal.
 class="request-error"
 id="requestError">
 </div>
-
 
 </form>
 
@@ -2719,144 +2910,60 @@ id="requestError">
 What Happens Next?
 </h3>
 
+<div class="process-step">
+<div class="process-number">1</div>
+<div>
+<strong>Requirement Received</strong>
+<span>Your school requirements are reviewed.</span>
+</div>
+</div>
 
 <div class="process-step">
-
-<div class="process-number">
-1
-</div>
-
+<div class="process-number">2</div>
 <div>
-<strong>
-Requirement Received
-</strong>
-
-<span>
-Your school requirements are reviewed.
-</span>
-
+<strong>Quotation</strong>
+<span>We discuss quantity, customization and pricing.</span>
 </div>
-
 </div>
-
 
 <div class="process-step">
-
-<div class="process-number">
-2
-</div>
-
+<div class="process-number">3</div>
 <div>
-<strong>
-Quotation
-</strong>
-
-<span>
-We discuss quantity, customization and pricing.
-</span>
-
+<strong>School Approval</strong>
+<span>School reviews and approves the quotation.</span>
 </div>
-
 </div>
-
 
 <div class="process-step">
-
-<div class="process-number">
-3
-</div>
-
+<div class="process-number">4</div>
 <div>
-<strong>
-School Approval
-</strong>
-
-<span>
-School reviews and approves the quotation.
-</span>
-
+<strong>Purchase Order</strong>
+<span>School shares the required order confirmation / PO.</span>
 </div>
-
 </div>
-
 
 <div class="process-step">
-
-<div class="process-number">
-4
-</div>
-
+<div class="process-number">5</div>
 <div>
-<strong>
-Purchase Order
-</strong>
-
-<span>
-School shares the required order confirmation / PO.
-</span>
-
+<strong>Final Design Approval</strong>
+<span>School-specific cover and content are finalized.</span>
 </div>
-
 </div>
-
 
 <div class="process-step">
-
-<div class="process-number">
-5
-</div>
-
+<div class="process-number">6</div>
 <div>
-<strong>
-Final Design Approval
-</strong>
-
-<span>
-School-specific cover and content are finalized.
-</span>
-
+<strong>Production &amp; Delivery</strong>
+<span>Notebooks are produced and delivered as planned.</span>
 </div>
-
 </div>
-
 
 <div class="process-step">
-
-<div class="process-number">
-6
-</div>
-
+<div class="process-number">7</div>
 <div>
-<strong>
-Production & Delivery
-</strong>
-
-<span>
-Notebooks are produced and delivered as planned.
-</span>
-
+<strong>Feedback &amp; Next Cycle</strong>
+<span>Feedback helps plan the next fresh notebook cycle.</span>
 </div>
-
-</div>
-
-
-<div class="process-step">
-
-<div class="process-number">
-7
-</div>
-
-<div>
-<strong>
-Feedback & Next Cycle
-</strong>
-
-<span>
-Feedback helps plan the next fresh notebook cycle.
-</span>
-
-</div>
-
 </div>
 
 </div>
@@ -2869,10 +2976,7 @@ Already Registered?
 </h3>
 
 <p style="color:#687287;font-size:14px;margin-bottom:14px;">
-
-Use your Requirement ID and registered phone number
-to view your quotation and respond through the School Portal.
-
+Use your Requirement ID and registered phone number to view your quotation and respond through the School Portal.
 </p>
 
 <a
@@ -2880,9 +2984,7 @@ href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal"
 target="_blank"
 class="btn btn-primary"
 style="width:100%;text-align:center;">
-
 Open School Portal
-
 </a>
 
 </div>
@@ -2895,8 +2997,7 @@ Built for School Partnerships
 </h3>
 
 <p>
-CikNotebooks is designed as a long-term school partnership model —
-from requirement and customization to delivery, feedback and future notebook cycles.
+CikNotebooks is designed as a long-term school partnership model — from requirement and customization to delivery, feedback and future notebook cycles.
 </p>
 
 </div>
@@ -2929,9 +3030,7 @@ Learning content can evolve with every new notebook cycle.
 </h2>
 
 <p>
-CikNotebooks is designed around fresh and progressively updated content
-so students can continue discovering new ideas rather than repeatedly seeing
-the same material.
+CikNotebooks is designed around fresh and progressively updated content so students can continue discovering new ideas rather than repeatedly seeing the same material.
 </p>
 
 </div>
@@ -2950,8 +3049,7 @@ Fresh Content
 </h3>
 
 <p>
-New content themes can be introduced across notebook cycles,
-subject to school requirements and production planning.
+New content themes can be introduced across notebook cycles, subject to school requirements and production planning.
 </p>
 
 </div>
@@ -2968,8 +3066,7 @@ Progressive Learning
 </h3>
 
 <p>
-Concepts become more sophisticated as students move from one age segment
-to the next.
+Concepts become more sophisticated as students move from one age segment to the next.
 </p>
 
 </div>
@@ -2986,8 +3083,7 @@ Real-world Connection
 </h3>
 
 <p>
-Students are encouraged to connect classroom learning with real situations,
-technologies and opportunities.
+Students are encouraged to connect classroom learning with real situations, technologies and opportunities.
 </p>
 
 </div>
@@ -3018,8 +3114,7 @@ A notebook that goes beyond writing.
 </h2>
 
 <p>
-We believe every child deserves more than a place to write.
-They deserve a place to discover, question, imagine and build their future.
+We believe every child deserves more than a place to write. They deserve a place to discover, question, imagine and build their future.
 </p>
 
 </div>
@@ -3028,13 +3123,13 @@ They deserve a place to discover, question, imagine and build their future.
 <div class="impact-grid">
 
 <div class="impact-item">
+
 <strong>
 01. Education for All
 </strong>
 
 <p>
-Supporting education of economically disadvantaged students
-through essential educational support.
+Supporting education of economically disadvantaged students through essential educational support.
 </p>
 
 </div>
@@ -3047,8 +3142,7 @@ through essential educational support.
 </strong>
 
 <p>
-Helping provide notebooks, stationery and other educational resources
-to students in need.
+Helping provide notebooks, stationery and other educational resources to students in need.
 </p>
 
 </div>
@@ -3061,8 +3155,7 @@ to students in need.
 </strong>
 
 <p>
-Supporting student achievement through merit-oriented initiatives
-subject to program requirements.
+Supporting student achievement through merit-oriented initiatives subject to program requirements.
 </p>
 
 </div>
@@ -3075,8 +3168,7 @@ subject to program requirements.
 </strong>
 
 <p>
-Encouraging exploration of AI, technology, innovation, entrepreneurship,
-financial literacy and life skills.
+Encouraging exploration of AI, technology, innovation, entrepreneurship, financial literacy and life skills.
 </p>
 
 </div>
@@ -3089,8 +3181,7 @@ financial literacy and life skills.
 </strong>
 
 <p>
-Helping students develop confidence to think independently,
-solve problems and create ideas.
+Helping students develop confidence to think independently, solve problems and create ideas.
 </p>
 
 </div>
@@ -3110,7 +3201,6 @@ solve problems and create ideas.
 
 <div class="container contact-grid">
 
-
 <div>
 
 <div class="eyebrow">
@@ -3122,9 +3212,7 @@ Bring future-ready learning into your school.
 </h2>
 
 <p>
-If you are a school principal, academic coordinator,
-management representative or educator, let's explore how
-CikNotebooks can work for your students.
+If you are a school principal, academic coordinator, management representative or educator, let's explore how CikNotebooks can work for your students.
 </p>
 
 
@@ -3141,9 +3229,7 @@ Abhishek Kumar
 <a
 href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school."
 target="_blank">
-
 +91 92340 11955
-
 </a>
 
 </p>
@@ -3209,19 +3295,16 @@ name="school_name"
 placeholder="School Name *"
 required>
 
-
 <input
 type="text"
 name="contact_person"
 placeholder="Contact Person *"
 required>
 
-
 <input
 type="text"
 name="designation"
 placeholder="Designation">
-
 
 <input
 type="tel"
@@ -3229,20 +3312,17 @@ name="phone"
 placeholder="Phone Number *"
 required>
 
-
 <input
 type="email"
 name="email"
 placeholder="Email *"
 required>
 
-
 <input
 type="text"
 name="city"
 placeholder="City *"
 required>
-
 
 <input
 type="number"
@@ -3305,7 +3385,6 @@ Request School Demo
 
 <div class="container footer-grid">
 
-
 <div>
 
 <h3>
@@ -3340,33 +3419,23 @@ Explore
 <ul>
 
 <li>
-<a href="#about">
-About
-</a>
+<a href="#about">About</a>
 </li>
 
 <li>
-<a href="#segments">
-Segments
-</a>
+<a href="#segments">Segments</a>
 </li>
 
 <li>
-<a href="#topics">
-Topics
-</a>
+<a href="#topics">Topics</a>
 </li>
 
 <li>
-<a href="#schools">
-For Schools
-</a>
+<a href="#schools">For Schools</a>
 </li>
 
 <li>
-<a href="#school-request">
-Request a Quote
-</a>
+<a href="#school-request">Request a Quote</a>
 </li>
 
 <li>
@@ -3378,9 +3447,7 @@ School Portal
 </li>
 
 <li>
-<a href="#impact">
-Social Impact
-</a>
+<a href="#impact">Social Impact</a>
 </li>
 
 </ul>
@@ -3443,8 +3510,7 @@ Jharkhand, India
 
 <div class="container copyright">
 
-© 2026 CikNotebooks. All Rights Reserved.
-• School Partnership Platform
+© 2026 CikNotebooks. All Rights Reserved. • School Partnership Platform
 
 </div>
 
@@ -3469,7 +3535,10 @@ aria-label="Open CikNotebooks AI">
      CIKNOTEBOOKS AI CHAT
      ===================================================== -->
 
-<div class="cik-ai-chat" id="cikAiChat">
+<div
+class="cik-ai-chat"
+id="cikAiChat">
+
 
 <div class="cik-ai-header">
 
@@ -3498,9 +3567,7 @@ Learn • Think • Solve • Create • Grow
 class="cik-ai-close"
 id="cikAiClose"
 aria-label="Close">
-
 ×
-
 </button>
 
 </div>
@@ -3514,9 +3581,7 @@ id="cikAiMessages">
 
 Hi! 👋 I'm CikNotebooks AI.
 
-Ask me about CikNotebooks, future-ready learning,
-AI, technology, entrepreneurship, financial literacy,
-or anything you're curious about.
+Ask me about CikNotebooks, future-ready learning, AI, technology, entrepreneurship, financial literacy, or anything you're curious about.
 
 </div>
 
@@ -3526,38 +3591,61 @@ or anything you're curious about.
 <button
 class="cik-ai-suggestion"
 onclick="cikAskSuggestion('What is CikNotebooks?')">
-
 What is CikNotebooks?
-
 </button>
-
 
 <button
 class="cik-ai-suggestion"
 onclick="cikAskSuggestion('What are the four CikNotebooks segments?')">
-
 Four Segments
-
 </button>
-
 
 <button
 class="cik-ai-suggestion"
 onclick="cikAskSuggestion('How can CikNotebooks help schools?')">
-
 For Schools
-
 </button>
-
 
 <button
 class="cik-ai-suggestion"
 onclick="cikAskSuggestion('What future skills can students learn?')">
-
 Future Skills
-
 </button>
 
+</div>
+
+</div>
+
+
+<!-- VOICE CONTROLS RESTORED -->
+
+<div class="cik-ai-voice-bar">
+
+<button
+type="button"
+class="cik-ai-voice-btn"
+id="cikVoiceMic">
+🎤 Speak
+</button>
+
+<button
+type="button"
+class="cik-ai-voice-btn"
+id="cikVoiceStop">
+⏹ Stop
+</button>
+
+<button
+type="button"
+class="cik-ai-voice-btn"
+id="cikVoiceListen">
+🔊 Listen
+</button>
+
+<div
+class="voice-status"
+id="cikVoiceStatus">
+Voice ready — you can type or speak.
 </div>
 
 </div>
@@ -3572,20 +3660,19 @@ class="cik-ai-input"
 placeholder="Ask CikNotebooks AI..."
 autocomplete="off">
 
-
 <button
 id="cikAiSend"
 class="cik-ai-send"
 aria-label="Send message">
-
 ➤
-
 </button>
 
 </div>
 
 </div>
 
+
+<!-- WHATSAPP -->
 
 <a
 class="whatsapp"
@@ -3601,7 +3688,7 @@ aria-label="Chat on WhatsApp">
 <script>
 
 /* =====================================================
-   CIKNOTEBOOKS B2B SCHOOL REQUIREMENT SYSTEM
+   B2B SCHOOL REQUIREMENT SYSTEM
    ===================================================== */
 
 const CIK_B2B_API =
@@ -3634,7 +3721,7 @@ function updateSegmentQuantities(){
 
 let total = 0;
 
-segmentChecks.forEach(check => {
+segmentChecks.forEach(check=>{
 
 const qty =
 document.querySelector(
@@ -3643,7 +3730,7 @@ CSS.escape(check.dataset.segment) +
 '"]'
 );
 
-if(!qty) return;
+if(!qty)return;
 
 qty.disabled = !check.checked;
 
@@ -3668,29 +3755,27 @@ total.toLocaleString("en-IN");
 }
 
 
-segmentChecks.forEach(check =>
+segmentChecks.forEach(check=>
 check.addEventListener(
 "change",
 updateSegmentQuantities
-)
-);
+));
 
 
-segmentQtyInputs.forEach(input =>
+segmentQtyInputs.forEach(input=>
 input.addEventListener(
 "input",
 updateSegmentQuantities
-)
-);
+));
 
 
 function getSelectedSegments(){
 
 return segmentChecks
 
-.filter(check => check.checked)
+.filter(check=>check.checked)
 
-.map(check => {
+.map(check=>{
 
 const qty =
 document.querySelector(
@@ -3706,7 +3791,7 @@ quantity:Number(qty?.value || 0)
 
 })
 
-.filter(item => item.quantity > 0);
+.filter(item=>item.quantity > 0);
 
 }
 
@@ -3723,7 +3808,7 @@ getSelectedSegments();
 
 const totalQuantity =
 segments.reduce(
-(sum,item) => sum + item.quantity,
+(sum,item)=>sum + item.quantity,
 0
 );
 
@@ -3748,7 +3833,9 @@ city:
 document.getElementById("reqCity").value.trim(),
 
 segment:
-segments.map(item => item.segment).join(", "),
+segments.map(
+item=>item.segment
+).join(", "),
 
 segments:segments,
 
@@ -3804,14 +3891,12 @@ data.email +
 data.city +
 
 "\nSegments & Quantities: " +
-data.segments
-.map(
+data.segments.map(
 item =>
 item.segment +
 " = " +
 item.quantity
-)
-.join(" | ") +
+).join(" | ") +
 
 "\nStudents: " +
 (data.students || "Not specified") +
@@ -3915,11 +4000,10 @@ JSON.stringify(data)
 let result = {};
 
 try{
-
 result =
 await response.json();
-
-}catch(_){}
+}
+catch(_){}
 
 
 if(
@@ -4006,13 +4090,14 @@ this.textContent =
 "Copied ✓";
 
 setTimeout(
-() =>
-this.textContent =
+()=>this.textContent =
 "Copy Requirement ID",
 1800
 );
 
-}catch(_){
+}
+
+catch(_){
 
 alert(
 "Requirement ID: " +
@@ -4031,11 +4116,14 @@ behavior:"smooth",
 block:"center"
 });
 
+
 submitButton.textContent =
 "Requirement Submitted ✓";
 
 
-}catch(error){
+}
+
+catch(error){
 
 console.error(
 "B2B requirement submission error:",
@@ -4058,11 +4146,9 @@ submitButton.textContent =
 }
 
 
-document
-.getElementById(
+document.getElementById(
 "newRequirementButton"
-)
-.addEventListener(
+).addEventListener(
 "click",
 function(event){
 
@@ -4097,17 +4183,13 @@ form.querySelector(
 "Submit School Requirement";
 
 segmentChecks.forEach(
-check =>
-check.checked = false
+check=>check.checked=false
 );
 
 segmentQtyInputs.forEach(
-input => {
-
-input.value = "";
-
-input.disabled = true;
-
+input=>{
+input.value="";
+input.disabled=true;
 }
 );
 
@@ -4120,11 +4202,12 @@ behavior:"smooth",
 block:"start"
 });
 
-});
+}
+);
 
 
 /* =====================================================
-   MOBILE NAVIGATION
+   MOBILE MENU
    ===================================================== */
 
 const mobileMenuBtn =
@@ -4159,16 +4242,17 @@ active
 ? "×"
 : "☰";
 
-});
+}
+);
 
 
 mobileMenu
 .querySelectorAll("a")
 .forEach(
-link =>
+link=>
 link.addEventListener(
 "click",
-() => {
+()=>{
 
 mobileMenu.classList.remove(
 "active"
@@ -4188,7 +4272,8 @@ mobileMenuBtn.textContent =
 
 
 /* =====================================================
-   CIKNOTEBOOKS AI ASSISTANT
+   CIKNOTEBOOKS AI
+   EXISTING WORKER PRESERVED
    ===================================================== */
 
 const CIK_AI_WORKER =
@@ -4226,7 +4311,7 @@ document.getElementById(
 );
 
 
-/* OPEN AI CHAT */
+/* OPEN */
 
 cikAiButton.addEventListener(
 "click",
@@ -4242,7 +4327,7 @@ cikAiInput.focus();
 );
 
 
-/* CLOSE AI CHAT */
+/* CLOSE */
 
 cikAiClose.addEventListener(
 "click",
@@ -4291,14 +4376,16 @@ return message;
 }
 
 
-/* SEND MESSAGE */
+/* =====================================================
+   AI SEND
+   ===================================================== */
 
 async function cikSendMessage(){
 
 const message =
 cikAiInput.value.trim();
 
-if(!message) return;
+if(!message)return;
 
 
 cikAddMessage(
@@ -4367,7 +4454,9 @@ cikAddMessage(
 }
 
 
-}catch(error){
+}
+
+catch(error){
 
 console.error(
 "CikNotebooks AI Error:",
@@ -4376,12 +4465,15 @@ error
 
 loadingMessage.remove();
 
+
 cikAddMessage(
 "I'm having trouble connecting right now. Please try again in a moment.",
 "bot"
 );
 
-}finally{
+}
+
+finally{
 
 cikAiSend.disabled = false;
 
@@ -4400,7 +4492,7 @@ cikSendMessage
 );
 
 
-/* ENTER KEY */
+/* ENTER */
 
 cikAiInput.addEventListener(
 "keydown",
@@ -4418,7 +4510,7 @@ cikSendMessage();
 );
 
 
-/* SUGGESTION BUTTONS */
+/* SUGGESTIONS */
 
 function cikAskSuggestion(
 question
@@ -4430,6 +4522,502 @@ question;
 cikSendMessage();
 
 }
+
+
+/* =====================================================
+   VOICE ASSISTANT
+   ===================================================== */
+
+const cikVoiceMic =
+document.getElementById(
+"cikVoiceMic"
+);
+
+const cikVoiceStop =
+document.getElementById(
+"cikVoiceStop"
+);
+
+const cikVoiceListen =
+document.getElementById(
+"cikVoiceListen"
+);
+
+const cikVoiceStatus =
+document.getElementById(
+"cikVoiceStatus"
+);
+
+
+let cikRecognition = null;
+
+let cikLastAIAnswer = "";
+
+let cikIsListening = false;
+
+
+/* SPEECH RECOGNITION */
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+
+if(SpeechRecognition){
+
+cikRecognition =
+new SpeechRecognition();
+
+cikRecognition.continuous = false;
+
+cikRecognition.interimResults = true;
+
+cikRecognition.lang = "en-IN";
+
+
+cikRecognition.onstart =
+function(){
+
+cikIsListening = true;
+
+cikVoiceMic.classList.add(
+"active"
+);
+
+cikVoiceStatus.textContent =
+"🎤 Listening... Speak now.";
+
+};
+
+
+cikRecognition.onresult =
+function(event){
+
+let transcript = "";
+
+for(
+let i = event.resultIndex;
+i < event.results.length;
+i++
+){
+
+transcript +=
+event.results[i][0].transcript;
+
+}
+
+cikAiInput.value =
+transcript;
+
+
+if(
+event.results[event.results.length-1]
+.isFinal
+){
+
+cikVoiceStatus.textContent =
+"Voice captured. Sending to AI...";
+
+cikSendMessage();
+
+}
+
+};
+
+
+cikRecognition.onerror =
+function(event){
+
+console.error(
+"Voice recognition error:",
+event.error
+);
+
+cikIsListening = false;
+
+cikVoiceMic.classList.remove(
+"active"
+);
+
+cikVoiceStatus.textContent =
+"Voice error. You can type your question instead.";
+
+};
+
+
+cikRecognition.onend =
+function(){
+
+cikIsListening = false;
+
+cikVoiceMic.classList.remove(
+"active"
+);
+
+if(
+cikVoiceStatus.textContent.includes(
+"Listening"
+)
+){
+
+cikVoiceStatus.textContent =
+"Voice ready.";
+
+}
+
+};
+
+}else{
+
+cikVoiceStatus.textContent =
+"Voice input is not supported in this browser.";
+
+cikVoiceMic.disabled = true;
+
+}
+
+
+/* START VOICE */
+
+cikVoiceMic.addEventListener(
+"click",
+function(){
+
+if(!cikRecognition){
+
+cikVoiceStatus.textContent =
+"Please use Chrome or another browser with voice recognition.";
+
+return;
+
+}
+
+
+if(cikIsListening){
+
+cikRecognition.stop();
+
+return;
+
+}
+
+
+try{
+
+cikRecognition.lang =
+"en-IN";
+
+cikRecognition.start();
+
+}
+
+catch(error){
+
+console.log(error);
+
+}
+
+}
+);
+
+
+/* STOP */
+
+cikVoiceStop.addEventListener(
+"click",
+function(){
+
+if(
+cikRecognition &&
+cikIsListening
+){
+
+cikRecognition.stop();
+
+}
+
+if(
+window.speechSynthesis
+){
+
+window.speechSynthesis.cancel();
+
+}
+
+cikVoiceStatus.textContent =
+"Voice stopped.";
+
+}
+);
+
+
+/* =====================================================
+   TEXT TO SPEECH
+   ===================================================== */
+
+function cikSpeakText(
+text
+){
+
+if(
+!("speechSynthesis" in window)
+){
+
+cikVoiceStatus.textContent =
+"Voice playback is not supported in this browser.";
+
+return;
+
+}
+
+
+window.speechSynthesis.cancel();
+
+
+const cleanText =
+text
+.replace(
+/[*#_`]/g,
+""
+)
+.replace(
+/https?:\/\/\S+/g,
+""
+);
+
+
+const utterance =
+new SpeechSynthesisUtterance(
+cleanText
+);
+
+
+utterance.lang =
+/[\u0900-\u097F]/.test(
+cleanText
+)
+? "hi-IN"
+: "en-IN";
+
+
+utterance.rate = .95;
+
+utterance.pitch = 1;
+
+
+utterance.onstart =
+function(){
+
+cikVoiceStatus.textContent =
+"🔊 AI is speaking...";
+
+};
+
+
+utterance.onend =
+function(){
+
+cikVoiceStatus.textContent =
+"Voice ready.";
+
+};
+
+
+window.speechSynthesis.speak(
+utterance
+);
+
+}
+
+
+/* LISTEN TO LAST AI ANSWER */
+
+cikVoiceListen.addEventListener(
+"click",
+function(){
+
+if(!cikLastAIAnswer){
+
+cikVoiceStatus.textContent =
+"Ask CikNotebooks AI something first.";
+
+return;
+
+}
+
+cikSpeakText(
+cikLastAIAnswer
+);
+
+}
+);
+
+
+/* =====================================================
+   MODIFY AI MESSAGE FUNCTION
+   TO REMEMBER LAST ANSWER
+   ===================================================== */
+
+const originalCikAddMessage =
+cikAddMessage;
+
+
+/*
+   We keep the same UI behaviour,
+   but capture bot answers for voice playback.
+*/
+
+function cikRememberBotAnswer(
+text
+){
+
+if(text){
+
+cikLastAIAnswer =
+text;
+
+}
+
+}
+
+
+/* =====================================================
+   PATCH AI RESPONSE CAPTURE
+   ===================================================== */
+
+const originalCikSendMessage =
+cikSendMessage;
+
+
+/*
+   Replace the function behaviour safely
+   so voice playback gets the latest answer.
+*/
+
+cikSendMessage =
+async function(){
+
+const message =
+cikAiInput.value.trim();
+
+if(!message)return;
+
+
+cikAddMessage(
+message,
+"user"
+);
+
+cikAiInput.value = "";
+
+
+const loadingMessage =
+cikAddMessage(
+"Thinking... 🤔",
+"bot"
+);
+
+cikAiSend.disabled = true;
+
+
+try{
+
+const response =
+await fetch(
+CIK_AI_WORKER,
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:
+JSON.stringify({
+message:message
+})
+
+}
+);
+
+
+const data =
+await response.json();
+
+
+loadingMessage.remove();
+
+
+if(data.answer){
+
+cikLastAIAnswer =
+data.answer;
+
+cikAddMessage(
+data.answer,
+"bot"
+);
+
+cikVoiceStatus.textContent =
+"AI answer ready. Tap 🔊 Listen.";
+
+}else{
+
+const fallback =
+"Sorry, I couldn't get an answer right now. Please try again.";
+
+cikLastAIAnswer =
+fallback;
+
+cikAddMessage(
+fallback,
+"bot"
+);
+
+}
+
+
+}
+
+catch(error){
+
+console.error(
+"CikNotebooks AI Error:",
+error
+);
+
+loadingMessage.remove();
+
+
+const errorText =
+"I'm having trouble connecting right now. Please try again in a moment.";
+
+cikLastAIAnswer =
+errorText;
+
+cikAddMessage(
+errorText,
+"bot"
+);
+
+}
+
+finally{
+
+cikAiSend.disabled = false;
+
+cikAiInput.focus();
+
+}
+
+};
+
+
+/* INITIAL QUANTITY */
+
+updateSegmentQuantities();
 
 </script>
 
