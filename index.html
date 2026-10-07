@@ -1786,7 +1786,7 @@ setTimeout(function(){if(!opened&&!document.hidden){window.open(a.href,'_blank',
     });
   }
 
-  form.addEventListener("submit", function(e){
+  form.addEventListener("submit", async function(e){
     e.preventDefault();
     const btn = document.getElementById("empSubmitBtn");
     if(btn){ btn.disabled = true; btn.textContent = "Submitting..."; }
@@ -1807,52 +1807,49 @@ setTimeout(function(){if(!opened&&!document.hidden){window.open(a.href,'_blank',
 "*Portfolio:* " + (data.get("portfolio") || "-") + "\n\n" +
 "---\nSent from ciknotebooks.co.in";
 
-    // 1. WhatsApp
+    // 1. WhatsApp (always works)
     const waUrl = "https://wa.me/919234011955?text=" + encodeURIComponent(summary);
     window.open(waUrl, "_blank");
 
-    // 2. Email via formsubmit
-    const emailForm = document.createElement("form");
-    emailForm.method = "POST";
-    emailForm.action = "https://formsubmit.co/abhifund@gmail.com";
-    emailForm.target = "_blank";
-    emailForm.style.display = "none";
+    // 2. Email via FormSubmit AJAX (more reliable than dynamic form)
+    try {
+      const payload = {
+        _subject: "New CikNotebooks Employee/Partner Application – " + data.get("full_name"),
+        _template: "table",
+        _captcha: "false",
+        full_name: data.get("full_name"),
+        phone: data.get("phone"),
+        email: data.get("email"),
+        city: data.get("city"),
+        position: position,
+        education: data.get("education") || "",
+        experience: data.get("experience") || "",
+        reason: data.get("reason"),
+        portfolio: data.get("portfolio") || ""
+      };
 
-    const fields = {
-      _subject: "New CikNotebooks Employee/Partner Application – " + data.get("full_name"),
-      _template: "table",
-      _captcha: "false",
-      full_name: data.get("full_name"),
-      phone: data.get("phone"),
-      email: data.get("email"),
-      city: data.get("city"),
-      position: position,
-      education: data.get("education") || "",
-      experience: data.get("experience") || "",
-      reason: data.get("reason"),
-      portfolio: data.get("portfolio") || ""
-    };
+      const res = await fetch("https://formsubmit.co/ajax/abhifund@gmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
 
-    Object.keys(fields).forEach(function(key){
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = fields[key];
-      emailForm.appendChild(input);
-    });
-
-    document.body.appendChild(emailForm);
-    emailForm.submit();
-    setTimeout(function(){ if(emailForm.parentNode) document.body.removeChild(emailForm); }, 2000);
+      const result = await res.json().catch(function(){ return {}; });
+      console.log("FormSubmit response:", result);
+    } catch (err) {
+      console.error("Email send error:", err);
+    }
 
     // Success UI
-    setTimeout(function(){
-      form.style.display = "none";
-      successBox.style.display = "block";
-      if(btn){ btn.disabled = false; btn.textContent = "Submit Application"; }
-    }, 700);
+    form.style.display = "none";
+    successBox.style.display = "block";
+    if(btn){ btn.disabled = false; btn.textContent = "Submit Application"; }
   });
 })();
+
 </script>
 
 </body>
