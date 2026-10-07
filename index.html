@@ -466,6 +466,35 @@ img{max-width:100%;height:auto}
 
 .hero .hv-ring{border-color:rgba(255,255,255,.14)}
 .hero .notebook{box-shadow:0 0 90px rgba(80,140,255,.35),0 40px 70px rgba(0,0,0,.4)}
+
+
+/* ===== EMPLOYEE / PARTNER APPLY MODAL ===== */
+.emp-modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;justify-content:center;padding:16px}
+.emp-modal.active{display:flex}
+.emp-modal-backdrop{position:absolute;inset:0;background:rgba(9,27,56,.55);backdrop-filter:blur(4px)}
+.emp-modal-box{position:relative;background:#fff;border-radius:18px;width:min(520px,100%);max-height:92vh;overflow:auto;box-shadow:0 25px 70px rgba(0,0,0,.25);border:1px solid #e5e9f0}
+.emp-modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;background:#102a56;color:#fff;border-radius:18px 18px 0 0;position:sticky;top:0;z-index:2}
+.emp-modal-header strong{display:block;font-size:16px}
+.emp-modal-header small{display:block;font-size:12px;color:#dce5f3;margin-top:3px}
+.emp-modal-close{background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;padding:0 4px;width:auto}
+.emp-modal-body{padding:20px}
+.emp-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.emp-form-group{margin-bottom:13px}
+.emp-form-group label{display:block;font-size:13px;font-weight:700;color:#263248;margin-bottom:6px}
+.emp-form-group input,.emp-form-group select,.emp-form-group textarea{width:100%;padding:12px;border:1px solid #d9dee8;border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:0}
+.emp-form-group textarea{resize:vertical;min-height:80px}
+.emp-checkbox{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#5f6b80;margin:14px 0 18px}
+.emp-checkbox input{width:auto;margin-top:3px;flex-shrink:0}
+.emp-submit-btn{width:100%;padding:14px;border:none;border-radius:9px;background:#102a56;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+.emp-submit-btn:hover{background:#173d76}
+.emp-submit-btn:disabled{opacity:.65;cursor:wait}
+.emp-form-note{font-size:12px;color:#687287;margin-top:12px;text-align:center;line-height:1.5}
+.emp-success{padding:40px 24px;text-align:center}
+.emp-success-icon{width:56px;height:56px;border-radius:50%;background:#e8f8ef;color:#1a7f4b;font-size:28px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-weight:800}
+.emp-success strong{display:block;font-size:20px;color:#102a56;margin-bottom:8px}
+.emp-success p{color:#526176;font-size:14px;margin-bottom:20px;line-height:1.5}
+@media(max-width:600px){.emp-form-row{grid-template-columns:1fr}}
+
 </style>
 </head>
 
@@ -956,6 +985,7 @@ img{max-width:100%;height:auto}
 <li><a href="#school-request">Request a Quote</a></li>
 <li><a href="https://ciknotebooks-b2b.abhishek88096.workers.dev/portal" target="_blank">School Portal</a></li>
 <li><a href="#contact">Request Demo</a></li>
+<li><a href="#" id="openEmployeeApply">Apply as Employee / Partner</a></li>
 <li><a href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank">WhatsApp: +91 92340 11955</a></li>
 <li><a href="mailto:abhifund@gmail.com">Email: abhifund@gmail.com</a></li>
 <li>Jharkhand, India</li>
@@ -1615,5 +1645,215 @@ setTimeout(function(){if(!opened&&!document.hidden){window.open(a.href,'_blank',
 });
 })();
 </script>
+
+<!-- ===== EMPLOYEE / PARTNER APPLY MODAL ===== -->
+<div id="employeeApplyModal" class="emp-modal" aria-hidden="true">
+  <div class="emp-modal-backdrop" id="empModalBackdrop"></div>
+  <div class="emp-modal-box">
+    <div class="emp-modal-header">
+      <div>
+        <strong>Apply as Employee / Partner</strong>
+        <small>Join the CikNotebooks journey</small>
+      </div>
+      <button type="button" class="emp-modal-close" id="empModalClose" aria-label="Close">×</button>
+    </div>
+
+    <form id="employeeApplyForm" class="emp-modal-body">
+      <div class="emp-form-row">
+        <div class="emp-form-group">
+          <label>Full Name *</label>
+          <input type="text" name="full_name" required placeholder="Your full name">
+        </div>
+        <div class="emp-form-group">
+          <label>Phone / WhatsApp *</label>
+          <input type="tel" name="phone" required placeholder="+91 XXXXX XXXXX">
+        </div>
+      </div>
+
+      <div class="emp-form-row">
+        <div class="emp-form-group">
+          <label>Email *</label>
+          <input type="email" name="email" required placeholder="you@example.com">
+        </div>
+        <div class="emp-form-group">
+          <label>City / Location *</label>
+          <input type="text" name="city" required placeholder="City, State">
+        </div>
+      </div>
+
+      <div class="emp-form-group">
+        <label>I am applying as *</label>
+        <select name="position" required>
+          <option value="">Select position / partnership type</option>
+          <option>Content Writer</option>
+          <option>Sales / School Outreach</option>
+          <option>Design</option>
+          <option>Operations</option>
+          <option>Internship</option>
+          <option>Business Partnership</option>
+          <option>Manufacturer</option>
+          <option>Delivery Partner</option>
+          <option>Shop Owner</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="emp-form-group" id="otherPositionGroup" style="display:none;">
+        <label>Please specify</label>
+        <input type="text" name="other_position" placeholder="Describe your role / interest">
+      </div>
+
+      <div class="emp-form-group">
+        <label>Education / Qualification</label>
+        <input type="text" name="education" placeholder="e.g. Graduate, Diploma, 12th...">
+      </div>
+
+      <div class="emp-form-group">
+        <label>Experience</label>
+        <textarea name="experience" rows="3" placeholder="Years of experience + short description"></textarea>
+      </div>
+
+      <div class="emp-form-group">
+        <label>Why do you want to join / partner with CikNotebooks? *</label>
+        <textarea name="reason" rows="4" required placeholder="Tell us briefly..."></textarea>
+      </div>
+
+      <div class="emp-form-group">
+        <label>LinkedIn / Portfolio / Website (optional)</label>
+        <input type="url" name="portfolio" placeholder="https://">
+      </div>
+
+      <label class="emp-checkbox">
+        <input type="checkbox" name="confirm" required>
+        <span>I confirm that the information provided is true and I am interested in working / partnering with CikNotebooks.</span>
+      </label>
+
+      <button type="submit" class="emp-submit-btn" id="empSubmitBtn">Submit Application</button>
+      <p class="emp-form-note">After submit, details will be sent to CikNotebooks team via Email &amp; WhatsApp.</p>
+    </form>
+
+    <div id="empSuccess" class="emp-success" style="display:none;">
+      <div class="emp-success-icon">✓</div>
+      <strong>Application Submitted</strong>
+      <p>Thank you! Your details have been shared with the CikNotebooks team. We will contact you soon.</p>
+      <button type="button" class="emp-submit-btn" id="empSuccessClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== EMPLOYEE / PARTNER APPLY ===== */
+(function(){
+  const modal = document.getElementById("employeeApplyModal");
+  const openBtn = document.getElementById("openEmployeeApply");
+  const closeBtn = document.getElementById("empModalClose");
+  const backdrop = document.getElementById("empModalBackdrop");
+  const form = document.getElementById("employeeApplyForm");
+  const successBox = document.getElementById("empSuccess");
+  const successClose = document.getElementById("empSuccessClose");
+  if(!modal || !form) return;
+
+  const positionSelect = form.querySelector('select[name="position"]');
+  const otherGroup = document.getElementById("otherPositionGroup");
+
+  function openModal(){
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden","false");
+    form.style.display = "block";
+    successBox.style.display = "none";
+    form.reset();
+    if(otherGroup) otherGroup.style.display = "none";
+    document.body.style.overflow = "hidden";
+  }
+  function closeModal(){
+    modal.classList.remove("active");
+    modal.setAttribute("aria-hidden","true");
+    document.body.style.overflow = "";
+  }
+
+  if(openBtn) openBtn.addEventListener("click", function(e){ e.preventDefault(); openModal(); });
+  if(closeBtn) closeBtn.addEventListener("click", closeModal);
+  if(backdrop) backdrop.addEventListener("click", closeModal);
+  if(successClose) successClose.addEventListener("click", closeModal);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && modal.classList.contains("active")) closeModal();
+  });
+
+  if(positionSelect){
+    positionSelect.addEventListener("change", function(){
+      if(otherGroup) otherGroup.style.display = this.value === "Other" ? "block" : "none";
+    });
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    const btn = document.getElementById("empSubmitBtn");
+    if(btn){ btn.disabled = true; btn.textContent = "Submitting..."; }
+
+    const data = new FormData(form);
+    const position = data.get("position") === "Other" ? (data.get("other_position") || "Other") : data.get("position");
+
+    const summary =
+"*New CikNotebooks Application*\n\n" +
+"*Name:* " + data.get("full_name") + "\n" +
+"*Phone:* " + data.get("phone") + "\n" +
+"*Email:* " + data.get("email") + "\n" +
+"*City:* " + data.get("city") + "\n" +
+"*Applying as:* " + position + "\n" +
+"*Education:* " + (data.get("education") || "-") + "\n" +
+"*Experience:* " + (data.get("experience") || "-") + "\n" +
+"*Reason:* " + data.get("reason") + "\n" +
+"*Portfolio:* " + (data.get("portfolio") || "-") + "\n\n" +
+"---\nSent from ciknotebooks.co.in";
+
+    // 1. WhatsApp
+    const waUrl = "https://wa.me/919234011955?text=" + encodeURIComponent(summary);
+    window.open(waUrl, "_blank");
+
+    // 2. Email via formsubmit
+    const emailForm = document.createElement("form");
+    emailForm.method = "POST";
+    emailForm.action = "https://formsubmit.co/abhifund@gmail.com";
+    emailForm.target = "_blank";
+    emailForm.style.display = "none";
+
+    const fields = {
+      _subject: "New CikNotebooks Employee/Partner Application – " + data.get("full_name"),
+      _template: "table",
+      _captcha: "false",
+      full_name: data.get("full_name"),
+      phone: data.get("phone"),
+      email: data.get("email"),
+      city: data.get("city"),
+      position: position,
+      education: data.get("education") || "",
+      experience: data.get("experience") || "",
+      reason: data.get("reason"),
+      portfolio: data.get("portfolio") || ""
+    };
+
+    Object.keys(fields).forEach(function(key){
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = fields[key];
+      emailForm.appendChild(input);
+    });
+
+    document.body.appendChild(emailForm);
+    emailForm.submit();
+    setTimeout(function(){ if(emailForm.parentNode) document.body.removeChild(emailForm); }, 2000);
+
+    // Success UI
+    setTimeout(function(){
+      form.style.display = "none";
+      successBox.style.display = "block";
+      if(btn){ btn.disabled = false; btn.textContent = "Submit Application"; }
+    }, 700);
+  });
+})();
+</script>
+
 </body>
 </html>
