@@ -31,7 +31,8 @@ img{max-width:100%;display:block}
 
 header{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.96);border-bottom:1px solid #e8ebf2;backdrop-filter:blur(10px)}
 .nav{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:25px}
-.logo{font-size:26px;font-weight:800;color:#102a56}
+.logo{display:flex;align-items:center;text-decoration:none;line-height:0}
+.logo-icon{width:68px;height:68px;object-fit:contain;display:block}
 .logo span{color:#f5b400}
 .nav-links{display:flex;gap:24px;align-items:center;list-style:none;font-size:14px;font-weight:600}
 .nav-links a:hover{color:#f0a900}
@@ -281,6 +282,7 @@ display:block;
 }
 
 @media(max-width:600px){
+.logo-icon{width:56px;height:56px}
 section{padding:65px 0}
 .hero{padding:70px 0}
 h1{font-size:43px}
@@ -506,7 +508,7 @@ img{max-width:100%;height:auto}
 
 <header>
 <div class="container nav">
-<a href="#" class="logo">Cik<span>Notebooks</span></a>
+<a href="#" class="logo" aria-label="CikNotebooks Home"><img src="logo.png" alt="CikNotebooks" class="logo-icon"></a>
 <ul class="nav-links">
 <li><a href="#about">About</a></li>
 <li><a href="#segments">Segments</a></li>
