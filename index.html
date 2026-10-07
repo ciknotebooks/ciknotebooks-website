@@ -1792,14 +1792,50 @@ setTimeout(function(){if(!opened&&!document.hidden){window.open(a.href,'_blank',
     if(btn){ btn.disabled = true; btn.textContent = "Submitting..."; }
 
     const data = new FormData(form);
-    const position = data.get("position") === "Other" ? (data.get("other_position") || "Other") : data.get("position");
+    const positionRaw = data.get("position");
+    const position = positionRaw === "Other" ? (data.get("other_position") || "Other") : positionRaw;
 
+    const payload = {
+      full_name: data.get("full_name"),
+      phone: data.get("phone"),
+      email: data.get("email") || "",
+      city: data.get("city") || "",
+      position: positionRaw || position,
+      other_position: data.get("other_position") || "",
+      education: data.get("education") || "",
+      experience: data.get("experience") || "",
+      reason: data.get("reason"),
+      portfolio: data.get("portfolio") || ""
+    };
+
+    let applicationId = "";
+
+    // 1. Save to CikNotebooks Worker (shows in Admin → Applications)
+    try {
+      const res = await fetch("https://ciknotebooks-b2b.abhishek88096.workers.dev/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json().catch(function(){ return {}; });
+      if(result && result.application_id){
+        applicationId = result.application_id;
+      }
+      if(!res.ok){
+        console.error("Application API error:", result);
+      }
+    } catch (err) {
+      console.error("Application API failed:", err);
+    }
+
+    // 2. Notify admin on WhatsApp
     const summary =
 "*New CikNotebooks Application*\n\n" +
+(applicationId ? ("*ID:* " + applicationId + "\n") : "") +
 "*Name:* " + data.get("full_name") + "\n" +
 "*Phone:* " + data.get("phone") + "\n" +
-"*Email:* " + data.get("email") + "\n" +
-"*City:* " + data.get("city") + "\n" +
+"*Email:* " + (data.get("email") || "-") + "\n" +
+"*City:* " + (data.get("city") || "-") + "\n" +
 "*Applying as:* " + position + "\n" +
 "*Education:* " + (data.get("education") || "-") + "\n" +
 "*Experience:* " + (data.get("experience") || "-") + "\n" +
@@ -1807,43 +1843,8 @@ setTimeout(function(){if(!opened&&!document.hidden){window.open(a.href,'_blank',
 "*Portfolio:* " + (data.get("portfolio") || "-") + "\n\n" +
 "---\nSent from ciknotebooks.co.in";
 
-    // 1. WhatsApp (always works)
-    const waUrl = "https://wa.me/919234011955?text=" + encodeURIComponent(summary);
-    window.open(waUrl, "_blank");
+    window.open("https://wa.me/919234011955?text=" + encodeURIComponent(summary), "_blank");
 
-    // 2. Email via FormSubmit AJAX (more reliable than dynamic form)
-    try {
-      const payload = {
-        _subject: "New CikNotebooks Employee/Partner Application – " + data.get("full_name"),
-        _template: "table",
-        _captcha: "false",
-        full_name: data.get("full_name"),
-        phone: data.get("phone"),
-        email: data.get("email"),
-        city: data.get("city"),
-        position: position,
-        education: data.get("education") || "",
-        experience: data.get("experience") || "",
-        reason: data.get("reason"),
-        portfolio: data.get("portfolio") || ""
-      };
-
-      const res = await fetch("https://formsubmit.co/ajax/abhifund@gmail.com", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await res.json().catch(function(){ return {}; });
-      console.log("FormSubmit response:", result);
-    } catch (err) {
-      console.error("Email send error:", err);
-    }
-
-    // Success UI
     form.style.display = "none";
     successBox.style.display = "block";
     if(btn){ btn.disabled = false; btn.textContent = "Submit Application"; }
