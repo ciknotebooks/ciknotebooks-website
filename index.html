@@ -50,7 +50,7 @@ h1{font-size:clamp(42px,6vw,72px);line-height:1.04;color:#102a56;margin-bottom:2
 .notebook h3{position:relative;font-size:30px;margin-top:65px}
 .notebook p{position:relative;color:#fff;font-size:14px;margin-top:14px}
 .floating-card{position:absolute;background:#fff;padding:18px;border-radius:12px;box-shadow:0 15px 35px rgba(0,0,0,.12);font-weight:700;color:#102a56}
-.fc1{top:45px;right:0}.fc2{bottom:45px;left:0}
+.fc1{top:40px;right:0}.fc2{bottom:40px;left:0}.fc5{top:40px;left:-10px}
 
 section{padding:90px 0}
 .section-head{max-width:760px;margin-bottom:50px}
@@ -335,8 +335,9 @@ h1{background:linear-gradient(135deg,var(--navy) 35%,var(--navy2));-webkit-backg
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 .floating-card{display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:14px;border:1px solid var(--line);backdrop-filter:blur(6px);animation:floaty 5s ease-in-out infinite}
 .fc2{animation-delay:-1.5s}
-.fc3{top:42%;left:-18px;animation-delay:-3s}
-.fc4{bottom:125px;right:-14px;animation-delay:-2s}
+.fc5{animation-delay:-0.8s}
+.fc3{top:48%;left:-18px;animation-delay:-3s}
+.fc4{bottom:110px;right:-14px;animation-delay:-2s}
 section{padding:100px 0}
 .section-head h2{font-size:clamp(32px,4vw,48px)}
 .section-head h2:after{content:"";display:block;width:56px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--gold),#ffd966);margin-top:16px}
@@ -377,7 +378,7 @@ footer{background:#071634}
 .whatsapp:hover{transform:scale(1.08)}
 .whatsapp:before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(37,211,102,.6);animation:waPulse 2.2s infinite}
 @keyframes waPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.6);opacity:0}}
-@media(max-width:600px){.hv-ring.r2{display:none}.hv-glow{width:300px;height:300px}.hv-ring.r1{width:320px;height:320px}.fc3{left:0}.fc4{right:0}.hero{padding:80px 0 70px}section{padding:70px 0}}
+@media(max-width:600px){.hv-ring.r2{display:none}.hv-glow{width:300px;height:300px}.hv-ring.r1{width:320px;height:320px}.fc3{left:0}.fc4{right:0}.fc5{left:0}.hero{padding:80px 0 70px}section{padding:70px 0}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 
 
