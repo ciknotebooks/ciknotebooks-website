@@ -809,8 +809,8 @@ img{max-width:100%;height:auto}
 </div>
 
 <label class="checkbox-row">
-<input type="checkbox" id="reqConsent" required>
-<span>I confirm that the information provided is for discussing CikNotebooks requirements for my school.</span>
+<input type="checkbox" id="reqConsent" name="privacy_consent" value="yes" required>
+<span>I confirm that the information provided is for discussing CikNotebooks requirements for my school. I agree to the <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style="color:#102a56;font-weight:700;text-decoration:underline;">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer" style="color:#102a56;font-weight:700;text-decoration:underline;">Terms &amp; Conditions</a>.</span>
 </label>
 
 <button type="submit" class="requirement-submit">Submit School Requirement</button>
@@ -992,6 +992,8 @@ img{max-width:100%;height:auto}
 <li><a href="#" id="openEmployeeApply">Apply as Employee / Partner</a></li>
 <li><a href="https://wa.me/919234011955?text=Hello%20CikNotebooks%2C%20I%20would%20like%20to%20know%20more%20about%20CikNotebooks%20for%20our%20school." target="_blank">WhatsApp: +91 92340 11955</a></li>
 <li><a href="mailto:abhifund@gmail.com">Email: abhifund@gmail.com</a></li>
+<li><a href="/privacy.html">Privacy Policy</a></li>
+<li><a href="/terms.html">Terms &amp; Conditions</a></li>
 <li>Jharkhand, India</li>
 </ul>
 </div>
@@ -1104,6 +1106,7 @@ function buildRequirementData(){
         quantity: Number(document.getElementById("reqQuantity").value || 0),
         custom_cover: document.getElementById("reqCover").value,
         custom_content: document.getElementById("reqContent").value,
+        privacy_consent: document.getElementById("reqConsent").checked,
         delivery_date: document.getElementById("reqDelivery").value,
         notes: (document.getElementById("reqSegmentBreakdown").value ? "Segment-wise Quantity:\n" + document.getElementById("reqSegmentBreakdown").value + "\n\n" : "") + document.getElementById("reqDetails").value.trim()
     };
