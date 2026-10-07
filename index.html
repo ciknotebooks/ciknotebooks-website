@@ -502,14 +502,20 @@ img{max-width:100%;height:auto}
 @media(max-width:600px){.emp-form-row{grid-template-columns:1fr}}
 
 
-/* CikNotebooks header logo — integrated transparent notebook mark */
-.nav{min-height:177px}
-.logo{height:177px;display:flex;align-items:center;overflow:visible}
-.logo-icon{width:198px;height:177px;object-fit:contain;display:block;flex:0 0 auto}
+/* CikNotebooks header logo — large, clean, transparent branding */
+header{background:rgba(255,255,255,.98)}
+.nav{min-height:150px;align-items:center}
+.logo{height:150px;display:flex;align-items:center;overflow:visible;flex:0 0 auto}
+.logo-icon{width:264px;height:236px;object-fit:contain;display:block;flex:0 0 auto}
+@media(max-width:900px){
+  .nav{min-height:120px}
+  .logo{height:120px}
+  .logo-icon{width:210px;height:190px}
+}
 @media(max-width:600px){
-  .nav{min-height:138px}
-  .logo{height:138px}
-  .logo-icon{width:150px;height:132px}
+  .nav{min-height:92px}
+  .logo{height:92px}
+  .logo-icon{width:150px;height:135px}
 }
 </style>
 </head>
