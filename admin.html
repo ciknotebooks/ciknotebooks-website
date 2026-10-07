@@ -134,50 +134,18 @@ button,input,select,textarea{font-family:inherit}
   </div>
 
   <div class="panel" id="panel-applications">
+    <div class="toolbar">
+      <button type="button" class="btn btn-primary" id="refreshApps">Refresh Applications</button>
+    </div>
     <div class="stats" id="appStats">
       <div class="stat"><strong id="statTotal">0</strong><span>Total</span></div>
       <div class="stat"><strong id="statNew">0</strong><span>New</span></div>
       <div class="stat"><strong id="statReview">0</strong><span>In Review</span></div>
-      <div class="stat"><strong id="statHired">0</strong><span>Hired / Partner</span></div>
+      <div class="stat"><strong id="statHired">0</strong><span>Accepted / Hired</span></div>
     </div>
+    <div id="appAlert"></div>
     <div class="card">
-      <h2>Add Application</h2>
-      <p class="sub">WhatsApp se aayi Employee / Partner application yahan add karo.</p>
-      <form id="addAppForm">
-        <div class="form-row">
-          <div class="form-group"><label>Full Name *</label><input type="text" name="name" required placeholder="Applicant name"></div>
-          <div class="form-group"><label>Phone *</label><input type="tel" name="phone" required placeholder="+91 ..."></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="email@example.com"></div>
-          <div class="form-group"><label>City</label><input type="text" name="city" placeholder="City"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Position / Type *</label>
-            <select name="position" required>
-              <option value="">Select</option>
-              <option>Content Writer</option><option>Sales / School Outreach</option><option>Design</option>
-              <option>Operations</option><option>Internship</option><option>Business Partnership</option>
-              <option>Manufacturer</option><option>Delivery Partner</option><option>Shop Owner</option><option>Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select name="status">
-              <option value="new">New</option><option value="review">In Review</option>
-              <option value="shortlist">Shortlisted</option><option value="reject">Rejected</option>
-              <option value="hired">Hired / Partner</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group full"><label>Notes / Details</label><textarea name="notes" rows="3" placeholder="Education, experience, reason..."></textarea></div>
-        <button type="submit" class="btn btn-primary">Add Application</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>All Applications</h2>
-      <p class="sub">Saved in this browser (localStorage).</p>
+      <h2>Applications</h2>
       <div class="list" id="appList"></div>
     </div>
   </div>
@@ -215,7 +183,7 @@ function showApp(){
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("appScreen").classList.add("show");
   adminKey = sessionStorage.getItem(STORAGE_KEY) || "";
-  renderApps(); renderDocs(); loadSchools();
+  loadApps(); renderDocs(); loadSchools();
 }
 function showLogin(){
   document.getElementById("loginScreen").style.display = "flex";
@@ -379,47 +347,150 @@ function renderSchoolList(list){
 }
 
 document.getElementById("refreshSchools").addEventListener("click", loadSchools);
+document.getElementById("refreshApps").addEventListener("click", loadApps);
 document.getElementById("schoolSearch").addEventListener("input", function(){ renderSchoolList(schoolCache); });
 
-function uid(){ return "A" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function statusBadge(s){
-  const map = {new:["badge-new","New"],review:["badge-review","In Review"],shortlist:["badge-shortlist","Shortlisted"],reject:["badge-reject","Rejected"],hired:["badge-hired","Hired / Partner"]};
-  const m = map[s] || map.new;
+
+let appCache = [];
+
+function normalizePhoneForWa(phone){
+  let p = String(phone || "").replace(/\D/g, "");
+  if(p.length === 10) p = "91" + p;
+  if(p.length === 11 && p.startsWith("0")) p = "91" + p.slice(1);
+  return p;
+}
+
+function appStatusBadge(s){
+  const map = {
+    "New": ["badge-new","New"],
+    "In Review": ["badge-review","In Review"],
+    "Accepted": ["badge-shortlist","Accepted"],
+    "Rejected": ["badge-reject","Rejected"],
+    "Hired": ["badge-hired","Hired"]
+  };
+  const m = map[s] || ["badge-default", s || "New"];
   return '<span class="badge '+m[0]+'">'+m[1]+'</span>';
 }
+
+async function loadApps(){
+  const list = document.getElementById("appList");
+  const alert = document.getElementById("appAlert");
+  if(!list) return;
+  list.innerHTML = '<div class="loading">Loading applications...</div>';
+  if(alert) alert.innerHTML = "";
+  if(!adminKey){
+    list.innerHTML = '<div class="empty"><strong>Not logged in</strong></div>';
+    return;
+  }
+  try{
+    const res = await fetch(B2B_BASE + "/api/admin/applications", {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "X-Admin-Key": adminKey,
+        "Authorization": "Bearer " + adminKey
+      },
+      mode: "cors"
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){
+      throw new Error(data.error || ("HTTP " + res.status));
+    }
+    appCache = data.applications || [];
+    renderApps();
+  }catch(err){
+    list.innerHTML = '<div class="empty"><strong>Could not load applications</strong>'+esc(String(err.message||err))+'</div>';
+  }
+}
+
 function renderApps(){
-  const apps = load(STORAGE_APPS);
+  const apps = appCache;
   const list = document.getElementById("appList");
   document.getElementById("statTotal").textContent = apps.length;
-  document.getElementById("statNew").textContent = apps.filter(a => a.status === "new").length;
-  document.getElementById("statReview").textContent = apps.filter(a => a.status === "review" || a.status === "shortlist").length;
-  document.getElementById("statHired").textContent = apps.filter(a => a.status === "hired").length;
-  if(!apps.length){ list.innerHTML = '<div class="empty"><strong>No applications yet</strong>WhatsApp se aayi applications yahan add karo.</div>'; return; }
-  const sorted = apps.slice().sort((a,b) => (b.created||0)-(a.created||0));
-  list.innerHTML = sorted.map(function(a){
-    return '<div class="item"><div class="item-header"><div><div class="item-title">'+esc(a.name)+'</div><div class="item-meta">'+esc(a.position)+' · '+esc(a.phone)+(a.city?' · '+esc(a.city):'')+'</div></div>'+statusBadge(a.status)+'</div>'+(a.email?'<div class="item-meta">Email: '+esc(a.email)+'</div>':'')+(a.notes?'<div class="item-meta">'+esc(a.notes)+'</div>':'')+'<div class="item-meta">Added: '+formatDate(a.created)+'</div><div class="item-actions"><select class="status-select btn-sm" data-id="'+a.id+'" style="padding:6px 8px;border-radius:6px;border:1px solid #d9dee8;font-size:12px;">'+opt("new",a.status,"New")+opt("review",a.status,"In Review")+opt("shortlist",a.status,"Shortlisted")+opt("reject",a.status,"Rejected")+opt("hired",a.status,"Hired / Partner")+'</select><button type="button" class="btn btn-danger btn-sm btn-del-app" data-id="'+a.id+'">Delete</button></div></div>';
+  document.getElementById("statNew").textContent = apps.filter(a => a.status === "New").length;
+  document.getElementById("statReview").textContent = apps.filter(a => a.status === "In Review").length;
+  document.getElementById("statHired").textContent = apps.filter(a => a.status === "Accepted" || a.status === "Hired").length;
+
+  if(!apps.length){
+    list.innerHTML = '<div class="empty"><strong>No applications yet</strong>Website se Apply as Employee / Partner form submit hote hi yahan dikhengi.</div>';
+    return;
+  }
+
+  list.innerHTML = apps.map(function(a){
+    const pos = a.position === "Other" && a.other_position ? a.other_position : a.position;
+    return '<div class="item" data-id="'+a.id+'">'+
+      '<div class="item-header">'+
+        '<div><div class="item-title">'+esc(a.full_name)+'</div>'+
+        '<div class="item-meta"><span class="req-id">'+esc(a.application_id||"")+'</span> · '+esc(pos)+' · '+esc(a.phone)+(a.city?' · '+esc(a.city):'')+'</div></div>'+
+        appStatusBadge(a.status)+
+      '</div>'+
+      (a.email ? '<div class="item-meta">Email: '+esc(a.email)+'</div>' : '')+
+      (a.education ? '<div class="item-meta">Education: '+esc(a.education)+'</div>' : '')+
+      (a.experience ? '<div class="item-meta">Experience: '+esc(a.experience)+'</div>' : '')+
+      (a.reason ? '<div class="item-meta">Reason: '+esc(a.reason)+'</div>' : '')+
+      (a.portfolio ? '<div class="item-meta">Portfolio: <a class="doc-link" href="'+esc(a.portfolio)+'" target="_blank" rel="noopener">'+esc(a.portfolio)+'</a></div>' : '')+
+      '<div class="item-meta">Submitted: '+formatAnyDate(a.created_at)+'</div>'+
+      '<div class="item-actions">'+
+        '<button type="button" class="btn btn-primary btn-sm btn-accept" data-id="'+a.id+'">Accept</button>'+
+        '<button type="button" class="btn btn-danger btn-sm btn-reject" data-id="'+a.id+'">Reject</button>'+
+        '<button type="button" class="btn btn-outline btn-sm btn-review" data-id="'+a.id+'">In Review</button>'+
+      '</div></div>';
   }).join("");
-  list.querySelectorAll(".status-select").forEach(function(sel){
-    sel.addEventListener("change", function(){
-      const apps = load(STORAGE_APPS); const item = apps.find(x => x.id === sel.dataset.id);
-      if(item){ item.status = sel.value; save(STORAGE_APPS, apps); renderApps(); }
-    });
+
+  list.querySelectorAll(".btn-accept").forEach(function(btn){
+    btn.addEventListener("click", function(){ updateAppStatus(btn.dataset.id, "Accepted"); });
   });
-  list.querySelectorAll(".btn-del-app").forEach(function(btn){
-    btn.addEventListener("click", function(){
-      if(!confirm("Delete this application?")) return;
-      let apps = load(STORAGE_APPS); apps = apps.filter(x => x.id !== btn.dataset.id); save(STORAGE_APPS, apps); renderApps();
-    });
+  list.querySelectorAll(".btn-reject").forEach(function(btn){
+    btn.addEventListener("click", function(){ updateAppStatus(btn.dataset.id, "Rejected"); });
+  });
+  list.querySelectorAll(".btn-review").forEach(function(btn){
+    btn.addEventListener("click", function(){ updateAppStatus(btn.dataset.id, "In Review"); });
   });
 }
-function opt(val, current, label){ return '<option value="'+val+'"'+(val===current?' selected':'')+'>'+label+'</option>'; }
-document.getElementById("addAppForm").addEventListener("submit", function(e){
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const apps = load(STORAGE_APPS);
-  apps.push({ id: uid(), name: fd.get("name").trim(), phone: fd.get("phone").trim(), email: (fd.get("email")||"").trim(), city: (fd.get("city")||"").trim(), position: fd.get("position"), status: fd.get("status")||"new", notes: (fd.get("notes")||"").trim(), created: Date.now() });
-  save(STORAGE_APPS, apps); e.target.reset(); renderApps();
-});
+
+async function updateAppStatus(id, status){
+  const app = appCache.find(function(x){ return String(x.id) === String(id); });
+  if(!app) return;
+
+  try{
+    const res = await fetch(B2B_BASE + "/api/admin/applications/" + id, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Admin-Key": adminKey,
+        "Authorization": "Bearer " + adminKey
+      },
+      body: JSON.stringify({ status: status }),
+      mode: "cors"
+    });
+    const data = await res.json().catch(function(){ return {}; });
+    if(!res.ok){
+      alert(data.error || "Update failed");
+      return;
+    }
+    // update cache
+    const idx = appCache.findIndex(function(x){ return String(x.id) === String(id); });
+    if(idx >= 0 && data.application) appCache[idx] = data.application;
+    renderApps();
+
+    // WhatsApp message to applicant
+    if(status === "Accepted" || status === "Rejected"){
+      const phone = normalizePhoneForWa(app.phone);
+      if(phone){
+        let msg = "";
+        if(status === "Accepted"){
+          msg = "Hello " + (app.full_name||"") + ",\\n\\nYour application (" + (app.application_id||"") + ") for *" + (app.position||"") + "* at *CikNotebooks* has been *Accepted*.\\n\\nOur team will contact you soon with next steps.\\n\\n— CikNotebooks Team";
+        } else {
+          msg = "Hello " + (app.full_name||"") + ",\\n\\nThank you for applying to *CikNotebooks* (" + (app.application_id||"") + ").\\n\\nAfter review, we are unable to proceed with your application at this time.\\n\\nWe appreciate your interest and wish you the best.\\n\\n— CikNotebooks Team";
+        }
+        window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+      }
+    }
+  }catch(err){
+    alert("Update failed: " + (err.message || err));
+  }
+}
 
 function renderDocs(){
   const docs = load(STORAGE_DOCS);
