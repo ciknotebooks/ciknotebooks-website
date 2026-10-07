@@ -129,7 +129,6 @@ button,input,select,textarea{font-family:inherit}
     </div>
     <div class="card">
       <h2>School Requirements</h2>
-      <p class="sub">Live list from CikNotebooks B2B (Cloudflare Worker + D1). Status/quotation ke liye Original School Admin use karein.</p>
       <div id="schoolList" class="loading">Loading...</div>
     </div>
   </div>
@@ -357,7 +356,7 @@ function renderSchoolList(list){
     document.getElementById("schoolList").innerHTML = '<div class="empty"><strong>No match</strong></div>';
     return;
   }
-  let html = '<div class="req-table-wrap"><table class="req-table"><thead><tr><th>Requirement ID</th><th>School</th><th>Contact</th><th>City</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  let html = '<div class="req-table-wrap"><table class="req-table"><thead><tr><th>Requirement ID</th><th>Type</th><th>School</th><th>Contact</th><th>City</th><th>Qty</th><th>Status</th><th>Date</th></tr></thead><tbody>';
   filtered.forEach(function(r){
     const id = field(r,["requirement_id","id","req_id","rid"]);
     const school = field(r,["school_name","school","name"]);
@@ -365,11 +364,15 @@ function renderSchoolList(list){
     const phone = field(r,["phone","mobile","whatsapp"]);
     const email = field(r,["email"]);
     const city = field(r,["city","location"]);
-    const qtyV = field(r,["quantity","total_quantity","notebooks","qty"]);
+    const qtyV = field(r,["admin_total_quantity","quantity","total_quantity","notebooks","qty"]);
     const status = field(r,["status","state"]) || "—";
     const created = field(r,["created_at","created","date","submitted_at"]);
     const segment = field(r,["segment","segments","segment_breakdown"]);
-    html += '<tr><td><div class="req-id">'+esc(id)+'</div></td><td><strong>'+esc(school)+'</strong>'+(segment?'<div class="item-meta">'+esc(String(segment).slice(0,80))+'</div>':'')+'</td><td>'+esc(contact)+(phone?'<div class="item-meta">'+esc(phone)+'</div>':'')+(email?'<div class="item-meta">'+esc(email)+'</div>':'')+'</td><td>'+esc(city)+'</td><td>'+esc(qtyV)+'</td><td><span class="badge badge-default">'+esc(status)+'</span></td><td>'+esc(formatAnyDate(created))+'</td></tr>';
+    const isTest = Number(r.is_test) === 1 || r.is_test === true || r.is_test === "1";
+    const typeBadge = isTest
+      ? '<span class="badge badge-new">Test</span>'
+      : '<span class="badge badge-shortlist">Live</span>';
+    html += '<tr><td><div class="req-id">'+esc(id)+'</div></td><td>'+typeBadge+'</td><td><strong>'+esc(school)+'</strong>'+(segment?'<div class="item-meta">'+esc(String(segment).slice(0,80))+'</div>':'')+'</td><td>'+esc(contact)+(phone?'<div class="item-meta">'+esc(phone)+'</div>':'')+(email?'<div class="item-meta">'+esc(email)+'</div>':'')+'</td><td>'+esc(city)+'</td><td>'+esc(qtyV)+'</td><td><span class="badge badge-default">'+esc(status)+'</span></td><td>'+esc(formatAnyDate(created))+'</td></tr>';
   });
   html += '</tbody></table></div>';
   document.getElementById("schoolList").innerHTML = html;
@@ -443,7 +446,25 @@ document.getElementById("addDocForm").addEventListener("submit", function(e){
 
 function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function formatDate(ts){ if(!ts) return "-"; const d = new Date(ts); return d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})+" "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"}); }
-function formatAnyDate(v){ if(!v) return "—"; const d = new Date(v); if(!isNaN(d.getTime())) return formatDate(d.getTime()); return String(v); }
+function formatAnyDate(v){
+  if(!v) return "—";
+  // SQLite CURRENT_TIMESTAMP is often "YYYY-MM-DD HH:MM:SS" (UTC, no Z)
+  let s = String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2} /.test(s) && !s.endsWith("Z") && s.indexOf("+") < 0){
+    s = s.replace(" ", "T") + "Z";
+  }
+  const d = new Date(s);
+  if(isNaN(d.getTime())) return String(v);
+  return d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+}
 </script>
 </body>
 </html>
