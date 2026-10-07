@@ -256,21 +256,26 @@ document.querySelectorAll(".tab").forEach(function(tab){
   });
 });
 
-const SCHOOL_ENDPOINTS = ["/api/admin/requirements","/api/requirements","/admin/api/requirements","/api/admin/list"];
-
 async function fetchWithKey(path){
   const headers = {
     "Accept": "application/json",
+    "Content-Type": "application/json",
     "X-Admin-Key": adminKey,
-    "Authorization": "Bearer " + adminKey,
-    "admin-key": adminKey
+    "Authorization": "Bearer " + adminKey
   };
-  const res = await fetch(B2B_BASE + path, { method: "GET", headers: headers, credentials: "include" });
-  if(!res.ok) throw new Error("HTTP " + res.status);
-  const ct = res.headers.get("content-type") || "";
-  if(ct.indexOf("json") >= 0) return await res.json();
+  const res = await fetch(B2B_BASE + path, {
+    method: "GET",
+    headers: headers,
+    mode: "cors"
+  });
   const text = await res.text();
-  try { return JSON.parse(text); } catch(e){ throw new Error("Not JSON"); }
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch(e) {}
+  if(!res.ok){
+    const msg = (data && data.error) ? data.error : ("HTTP " + res.status);
+    throw new Error(msg + " (" + res.status + ")");
+  }
+  return data;
 }
 
 function normalizeRequirements(data){
@@ -293,30 +298,41 @@ async function loadSchools(){
     box.innerHTML = '<div class="empty"><strong>Not logged in</strong>Please login with ADMIN_KEY.</div>';
     return;
   }
-  let list = []; let lastErr = null; let usedPath = null;
-  for(const path of SCHOOL_ENDPOINTS){
-    try{
-      const data = await fetchWithKey(path);
-      list = normalizeRequirements(data);
-      usedPath = path;
-      break;
-    }catch(e){ lastErr = e; }
-  }
-  schoolCache = list;
-  if(list.length === 0 && lastErr){
-    alert.innerHTML = '<div class="alert alert-warn"><strong>API se list auto-load nahi hui</strong> (CORS / endpoint protect ho sakta hai).<br>Complete school list, status update aur quotation ke liye original admin use karein.<br><br><a class="btn btn-primary" href="'+B2B_BASE+'/admin" target="_blank" rel="noopener">Open School Admin Dashboard ↗</a></div>';
+
+  try {
+    const data = await fetchWithKey("/api/admin/requirements");
+    const list = normalizeRequirements(data);
+    schoolCache = list;
+
+    if(list.length === 0){
+      alert.innerHTML = '<div class="alert alert-info">API connected. Abhi koi school requirement nahi mili.</div>';
+      box.innerHTML = '<div class="empty"><strong>No requirements yet</strong></div>';
+      document.getElementById("schoolStats").style.display = "none";
+      return;
+    }
+
+    alert.innerHTML = '<div class="alert alert-info">Loaded <strong>'+list.length+'</strong> requirement(s) from Worker API. Status/quotation edit: <a href="'+B2B_BASE+'/admin" target="_blank">School Admin</a></div>';
+    renderSchoolList(list);
+  } catch(err) {
+    schoolCache = [];
+    const msg = String(err && err.message ? err.message : err);
+    const isCors = msg.indexOf("Failed to fetch") >= 0 || msg.indexOf("NetworkError") >= 0 || msg.indexOf("Load failed") >= 0;
+    const is401 = msg.indexOf("401") >= 0 || msg.toLowerCase().indexOf("unauthorized") >= 0;
+
+    let tip = "";
+    if(is401){
+      tip = "<br><br><b>Fix:</b> Logout karke Cloudflare ADMIN_KEY (naya secret) se dubara login karo.";
+    } else if(isCors){
+      tip = "<br><br><b>Fix:</b> ciknotebooks-b2b worker mein updated CORS code deploy hua hai ya nahi check karo (Save and Deploy).";
+    } else {
+      tip = "<br><br><b>Error:</b> " + msg.replace(/</g,"&lt;");
+    }
+
+    alert.innerHTML = '<div class="alert alert-warn"><strong>List load nahi hui.</strong>' + tip +
+      '<br><br><a class="btn btn-primary" href="'+B2B_BASE+'/admin" target="_blank" rel="noopener">Open School Admin Dashboard ↗</a></div>';
     box.innerHTML = '<div class="empty"><strong>Use Original School Admin</strong><br><br><a class="btn btn-primary" href="'+B2B_BASE+'/admin" target="_blank" rel="noopener">Open → '+B2B_BASE+'/admin</a></div>';
     document.getElementById("schoolStats").style.display = "none";
-    return;
   }
-  if(list.length === 0){
-    alert.innerHTML = '<div class="alert alert-info">Koi school requirement abhi nahi mili.</div>';
-    box.innerHTML = '<div class="empty"><strong>No requirements yet</strong></div>';
-    document.getElementById("schoolStats").style.display = "none";
-    return;
-  }
-  alert.innerHTML = '<div class="alert alert-info">Loaded <strong>'+list.length+'</strong> requirement(s)'+(usedPath?' via <code>'+usedPath+'</code>':'')+'. Status/quotation: <a href="'+B2B_BASE+'/admin" target="_blank">School Admin</a></div>';
-  renderSchoolList(list);
 }
 
 function field(obj, keys){
