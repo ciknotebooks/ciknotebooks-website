@@ -175,6 +175,8 @@ const STORAGE_AUTH = "cik_admin_auth_v1";
 let adminKey = sessionStorage.getItem(STORAGE_KEY) || "";
 let schoolCache = [];
 
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
 function load(key){ try{ return JSON.parse(localStorage.getItem(key) || "[]"); }catch(e){ return []; } }
 function save(key, data){ localStorage.setItem(key, JSON.stringify(data)); }
 
@@ -480,9 +482,9 @@ async function updateAppStatus(id, status){
       if(phone){
         let msg = "";
         if(status === "Accepted"){
-          msg = "Hello " + (app.full_name||"") + ",\\n\\nYour application (" + (app.application_id||"") + ") for *" + (app.position||"") + "* at *CikNotebooks* has been *Accepted*.\\n\\nOur team will contact you soon with next steps.\\n\\n— CikNotebooks Team";
+          msg = "Hello " + (app.full_name||"") + ",\n\nYour application (" + (app.application_id||"") + ") for *" + (app.position||"") + "* at *CikNotebooks* has been *Accepted*.\n\nOur team will contact you soon with next steps.\n\n— CikNotebooks Team";
         } else {
-          msg = "Hello " + (app.full_name||"") + ",\\n\\nThank you for applying to *CikNotebooks* (" + (app.application_id||"") + ").\\n\\nAfter review, we are unable to proceed with your application at this time.\\n\\nWe appreciate your interest and wish you the best.\\n\\n— CikNotebooks Team";
+          msg = "Hello " + (app.full_name||"") + ",\n\nThank you for applying to *CikNotebooks* (" + (app.application_id||"") + ").\n\nAfter review, we are unable to proceed with your application at this time.\n\nWe appreciate your interest and wish you the best.\n\n— CikNotebooks Team";
         }
         window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
       }
