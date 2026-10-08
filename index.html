@@ -1472,7 +1472,39 @@ function stopCikVoiceRecognition(){
     cikAiVoice.title = "Speak";
 }
 
-cikAiVoice.addEventListener("click", function(){
+async function ensureCikMicrophonePermission(){
+    // Explicitly request microphone access before starting SpeechRecognition.
+    // This makes Chrome show/use the site's microphone permission instead of
+    // failing silently with SpeechRecognition error: "not-allowed".
+    if(!window.isSecureContext){
+        throw new Error("insecure-context");
+    }
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        throw new Error("microphone-api-unavailable");
+    }
+
+    let permissionState = "unknown";
+    try{
+        if(navigator.permissions && navigator.permissions.query){
+            const permission = await navigator.permissions.query({name:"microphone"});
+            permissionState = permission.state;
+        }
+    }catch(_){
+        // Some browsers do not expose microphone through Permissions API.
+    }
+
+    if(permissionState === "denied"){
+        throw new Error("microphone-denied");
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    // SpeechRecognition handles the actual audio capture. We only use this
+    // short-lived stream to trigger/verify the browser microphone permission.
+    stream.getTracks().forEach(function(track){ track.stop(); });
+}
+
+cikAiVoice.addEventListener("click", async function(){
     if(!cikRecognition){
         setupCikVoiceRecognition();
     }
@@ -1487,12 +1519,29 @@ cikAiVoice.addEventListener("click", function(){
 
     stopCikSpeech();
     cikAiInput.focus();
+    cikSetVoiceStatus("Checking microphone access...");
+    cikAiVoice.disabled = true;
 
     try{
+        await ensureCikMicrophonePermission();
+        cikSetVoiceStatus("🎤 Starting microphone...");
         cikRecognition.start();
     }catch(error){
-        console.error("Could not start voice recognition:",error);
-        cikSetVoiceStatus("Please wait a moment and tap 🎤 again.");
+        console.error("Could not start microphone/voice recognition:",error);
+
+        if(error && error.message === "microphone-denied"){
+            cikSetVoiceStatus("Microphone is blocked for this site. In Chrome, open the 🔒 site icon → Permissions → Microphone → Allow, then reload this page.");
+        }else if(error && error.name === "NotAllowedError"){
+            cikSetVoiceStatus("Microphone access was denied. Allow microphone access for ciknotebooks.co.in in Chrome, then reload the page.");
+        }else if(error && error.name === "NotFoundError"){
+            cikSetVoiceStatus("No microphone was found on this device.");
+        }else if(error && error.message === "insecure-context"){
+            cikSetVoiceStatus("Voice input needs a secure HTTPS connection. Please open https://ciknotebooks.co.in");
+        }else{
+            cikSetVoiceStatus("Microphone could not start. Please allow microphone access and try again.");
+        }
+    }finally{
+        cikAiVoice.disabled = false;
     }
 });
 
